@@ -1,0 +1,8 @@
+build/
+*.dll
+*.pdb
+*.lib
+*.exp
+.vs/
+CMakeCache.txt
+CMakeFiles/
