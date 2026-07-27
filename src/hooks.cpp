@@ -39,6 +39,12 @@ extern "C" __declspec(dllexport) void EOS_CALL EOS_SessionDetails_Attribute_Rele
     EOS_SessionDetails_Attribute* SessionAttribute);
 extern "C" __declspec(dllexport) void EOS_CALL EOS_SessionDetails_Release(EOS_HSessionDetails SessionHandle);
 
+// EOS_EResult_ToString remains a plain thunk export (not hooked) - declaring
+// it and calling it directly links straight to that thunk, giving us the
+// SDK's own authoritative name for a result code instead of guessing at
+// numeric values by hand.
+extern "C" const char* EOS_CALL EOS_EResult_ToString(EOS_EResult Result);
+
 namespace {
 
 void LogLine(const char* fmt, ...) {
@@ -129,6 +135,36 @@ FindFn ResolveFind() {
     return original;
 }
 
+using JoinSessionFn = void(EOS_CALL*)(EOS_HSessions, const EOS_Sessions_JoinSessionOptions*, void*,
+                                       EOS_Sessions_OnJoinSessionCallback);
+
+JoinSessionFn ResolveJoinSession() {
+    static JoinSessionFn original =
+        reinterpret_cast<JoinSessionFn>(GetProcAddress(g_originalModule, "EOS_Sessions_JoinSession"));
+    return original;
+}
+
+struct JoinSessionContext {
+    void* originalClientData;
+    EOS_Sessions_OnJoinSessionCallback originalCallback;
+};
+
+void EOS_CALL OnJoinSessionComplete(const EOS_Sessions_JoinSessionCallbackInfo* Data) {
+    auto* ctx = static_cast<JoinSessionContext*>(Data->ClientData);
+
+    LogLine("JoinSession completed ResultCode=%d (%s)", Data->ResultCode,
+            SafeStr(EOS_EResult_ToString(Data->ResultCode)));
+
+    EOS_Sessions_JoinSessionCallbackInfo forwarded = *Data;
+    forwarded.ClientData = ctx->originalClientData;
+    EOS_Sessions_OnJoinSessionCallback originalCallback = ctx->originalCallback;
+    delete ctx;
+
+    if (originalCallback) {
+        originalCallback(&forwarded);
+    }
+}
+
 struct FindContext {
     void* originalClientData;
     EOS_SessionSearch_OnFindCallback originalCallback;
@@ -183,13 +219,16 @@ void EOS_CALL OnFindComplete(const EOS_SessionSearch_FindCallbackInfo* Data) {
                 LogLine(
                     "  [%u] SessionId=\"%s\" HostAddress=\"%s\" NumOpenPublicConnections=%u "
                     "BucketId=\"%s\" NumPublicConnections=%u PermissionLevel=%d "
-                    "bAllowJoinInProgress=%s OwnerServerClientId=\"%s\"",
+                    "bAllowJoinInProgress=%s bInvitesAllowed=%s bSanctionsEnabled=%s "
+                    "OwnerServerClientId=\"%s\"",
                     i, SafeStr(info->SessionId), SafeStr(info->HostAddress),
                     info->NumOpenPublicConnections,
                     info->Settings ? SafeStr(info->Settings->BucketId) : "(null)",
                     info->Settings ? info->Settings->NumPublicConnections : 0u,
                     info->Settings ? info->Settings->PermissionLevel : -1,
                     (info->Settings && info->Settings->bAllowJoinInProgress) ? "true" : "false",
+                    (info->Settings && info->Settings->bInvitesAllowed) ? "true" : "false",
+                    (info->Settings && info->Settings->bSanctionsEnabled) ? "true" : "false",
                     SafeStr(info->OwnerServerClientId));
                 EOS_SessionDetails_Info_Release(info);
             }
@@ -550,4 +589,30 @@ extern "C" __declspec(dllexport) void EOS_CALL EOS_SessionDetails_Release(EOS_HS
     if (original) {
         original(SessionHandle);
     }
+}
+
+// The actual "connect to this session" call - logged because Find/search
+// already proved EOS returns valid results, so whatever produces the
+// in-game "Session not found" error has to be here or later. Epic's own
+// docs note the backend validates various conditions before allowing a
+// join, including per-player sanctions (EOS_Sessions_PlayerSanctioned).
+extern "C" __declspec(dllexport) void EOS_CALL EOS_Sessions_JoinSession(
+    EOS_HSessions Handle, const EOS_Sessions_JoinSessionOptions* Options, void* ClientData,
+    EOS_Sessions_OnJoinSessionCallback CompletionDelegate) {
+    LogLine("JoinSession called SessionName=\"%s\" bPresenceEnabled=%s",
+            Options ? SafeStr(Options->SessionName) : "(null)",
+            (Options && Options->bPresenceEnabled) ? "true" : "false");
+
+    JoinSessionFn original = ResolveJoinSession();
+    if (!original) {
+        LogLine("JoinSession: failed to resolve original function");
+        if (CompletionDelegate) {
+            EOS_Sessions_JoinSessionCallbackInfo errorInfo{-1, ClientData};
+            CompletionDelegate(&errorInfo);
+        }
+        return;
+    }
+
+    auto* ctx = new JoinSessionContext{ClientData, CompletionDelegate};
+    original(Handle, Options, ctx, OnJoinSessionComplete);
 }

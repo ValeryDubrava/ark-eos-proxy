@@ -592,7 +592,6 @@ EXPORTS
     EOS_Sessions_GetInviteCount
     EOS_Sessions_GetInviteIdByIndex
     EOS_Sessions_IsUserInSession
-    EOS_Sessions_JoinSession
     EOS_Sessions_QueryInvites
     EOS_Sessions_RegisterPlayers
     EOS_Sessions_RejectInvite

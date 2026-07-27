@@ -2,14 +2,14 @@
 
 #include "session_mock.h"
 
-extern "C" unsigned long long g_thunkTargets[664];
+extern "C" unsigned long long g_thunkTargets[663];
 extern "C" HMODULE g_originalModule = nullptr;
 extern "C" HMODULE g_thisModule = nullptr;
 
 namespace {
 constexpr const char* kOriginalDllName = "EOSSDK_Win64_Shipping_orig.dll";
 
-const char* const kExportNames[664] = {
+const char* const kExportNames[663] = {
     "EOS_Achievements_AddNotifyAchievementsUnlocked",
     "EOS_Achievements_AddNotifyAchievementsUnlockedV2",
     "EOS_Achievements_CopyAchievementDefinitionByAchievementId",
@@ -602,7 +602,6 @@ const char* const kExportNames[664] = {
     "EOS_Sessions_GetInviteCount",
     "EOS_Sessions_GetInviteIdByIndex",
     "EOS_Sessions_IsUserInSession",
-    "EOS_Sessions_JoinSession",
     "EOS_Sessions_QueryInvites",
     "EOS_Sessions_RegisterPlayers",
     "EOS_Sessions_RejectInvite",
@@ -690,7 +689,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
     }
     g_originalModule = original;
 
-    for (int i = 0; i < 664; ++i) {
+    for (int i = 0; i < 663; ++i) {
         void* proc = reinterpret_cast<void*>(GetProcAddress(original, kExportNames[i]));
         if (!proc) {
             return FALSE;

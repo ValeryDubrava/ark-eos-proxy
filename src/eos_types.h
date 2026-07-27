@@ -112,13 +112,15 @@ struct EOS_SessionDetails_CopyInfoOptions {
 };
 
 // Prefix-only mirror (see EOS_Platform_Options_Prefix comment above) - we
-// only read up through bAllowJoinInProgress/PermissionLevel.
+// only read up through bInvitesAllowed/bSanctionsEnabled.
 struct EOS_SessionDetails_Settings_Prefix {
     int32_t ApiVersion;
     const char* BucketId;
     uint32_t NumPublicConnections;
     EOS_Bool bAllowJoinInProgress;
     EOS_EOnlineSessionPermissionLevel PermissionLevel;
+    EOS_Bool bInvitesAllowed;
+    EOS_Bool bSanctionsEnabled;
 };
 
 struct EOS_SessionDetails_Info {
@@ -145,3 +147,27 @@ struct EOS_SessionDetails_Attribute {
     EOS_Sessions_AttributeData* Data;
     EOS_ESessionAttributeAdvertisementType AdvertisementType;
 };
+
+// --- EOS_Sessions_JoinSession ---
+// https://dev.epicgames.com/docs/api-ref/functions/eos-sessions-join-session
+// Per Epic's docs: "Backend will validate various conditions to make sure it
+// is possible to join the session" - this is the call whose result we
+// actually want to see, since Find/search has already been shown to return
+// real, valid session data.
+
+using EOS_HSessions = struct EOS_SessionsHandle*;
+
+struct EOS_Sessions_JoinSessionOptions {
+    int32_t ApiVersion;
+    const char* SessionName;
+    EOS_HSessionDetails SessionHandle;
+    EOS_ProductUserId LocalUserId;
+    EOS_Bool bPresenceEnabled;
+};
+
+struct EOS_Sessions_JoinSessionCallbackInfo {
+    EOS_EResult ResultCode;
+    void* ClientData;
+};
+
+using EOS_Sessions_OnJoinSessionCallback = void(EOS_CALL*)(const EOS_Sessions_JoinSessionCallbackInfo*);

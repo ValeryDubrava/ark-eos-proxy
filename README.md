@@ -40,7 +40,7 @@ stub/name list (`eossdk_proxy.def`, `src/eossdk_thunks.asm`,
 instead, exported via `__declspec(dllexport)` and resolving/calling the
 original itself.
 
-**Thirteen functions are intercepted this way today** (`src/hooks.cpp`). Five
+**Fourteen functions are intercepted this way today** (`src/hooks.cpp`). Six
 are purely for logging (call straight through, unmodified); the other eight
 implement mock session injection (see below).
 
@@ -66,23 +66,39 @@ implement mock session injection (see below).
   a search. The hook wraps its completion callback: after the real search
   finishes, it walks every result via `GetSearchResultCount` →
   `CopySearchResultByIndex` → `SessionDetails_CopyInfo` (session ID, host
-  address, bucket ID, permission level, etc.) and
+  address, bucket ID, permission level, invites/sanctions flags, etc.) and
   `GetSessionAttributeCount`/`CopySessionAttributeByIndex` (every
   key/value attribute on the session), logs all of it, releases the
   handles, then calls the game's original callback with its original
   `ClientData` restored — so from the game's point of view nothing
-  changed.
+  changed. **This turned out to be the key finding**: the ClusterId search
+  for the Russian cluster returns 8 fully valid real sessions (real GUIDs,
+  real host address, correct map/bucket data) — search was never the
+  problem. In-game, selecting one of these still fails ("Session not
+  found"), so whatever's actually blocking this happens *after* a
+  successful search.
+- `EOS_Sessions_JoinSession` — the actual "connect to this session" call,
+  added once `Find` proved search itself works. Epic's own docs for this
+  function are explicit: *"Backend will validate various conditions to
+  make sure it is possible to join the session"* — including a documented
+  `EOS_Sessions_PlayerSanctioned` result specifically for accounts with a
+  `RESTRICT_MATCHMAKING` sanction. The hook logs `ResultCode` using the
+  SDK's own `EOS_EResult_ToString` (declared and called directly here,
+  still a plain thunk export elsewhere in this DLL) rather than a
+  hand-maintained numeric table, so the name is authoritative.
 
-Root-cause hunting stopped here: no explicit region parameter appeared
-anywhere client-side (search filters, platform options, overrides), and a
-VPN test (different exit country, confirmed via `tracert` to actually route
-differently) made no difference to the empty cluster-search result either —
-ruling out both a locally-visible parameter and simple client-IP-path
-filtering. Whatever the exact backend mechanism (Steam account region is
-the leading remaining guess, but hard to verify directly), the practical
-fix doesn't require knowing it: mock injection (below) supplies the
-connection info the game needs directly, sidestepping the search instead of
-fixing it.
+Root-cause hunting on the *search* side is done: no explicit region
+parameter appeared anywhere client-side (search filters, platform options,
+overrides), and a VPN test (different exit country, confirmed via
+`tracert`) made no difference — consistent with search never having been
+filtered at all, which the `Find` logging above later confirmed directly.
+The open question moved to the join/connect step, which `JoinSession`'s
+logging now covers. If `PlayerSanctioned` shows up, the fix is on Epic's/
+the game operator's side (lifting the sanction), not something a client
+patch can route around — but knowing which failure it actually is beats
+guessing. Mock injection (below) remains useful independent of the answer,
+since it supplies the connection info the game needs directly rather than
+depending on search or join succeeding for the target server.
 
 `src/eos_types.h` has the minimal struct/enum definitions these hooks need,
 hand-written from Epic's public API reference (dev.epicgames.com/docs) —
@@ -134,19 +150,31 @@ search), check `EOSProxy.log` next to the DLL. Lines look like:
 [2026-07-27 12:00:00] Platform_Create ProductId="..." SandboxId="..." ClientId="..." bIsServer=false OverrideCountryCode="(null)" OverrideLocaleCode="(null)"
 [2026-07-27 12:00:00] Find called
 [2026-07-27 12:00:00] Find completed ResultCode=0
-[2026-07-27 12:00:00] Find resultCount=1
-[2026-07-27 12:00:00]   [0] SessionId="..." HostAddress="..." NumOpenPublicConnections=... BucketId="..." NumPublicConnections=... PermissionLevel=... bAllowJoinInProgress=... OwnerServerClientId="..."
+[2026-07-27 12:00:00] Find resultCount=8
+[2026-07-27 12:00:00]   [0] SessionId="..." HostAddress="..." NumOpenPublicConnections=... BucketId="..." NumPublicConnections=... PermissionLevel=... bAllowJoinInProgress=... bInvitesAllowed=... bSanctionsEnabled=... OwnerServerClientId="..."
 [2026-07-27 12:00:00]   attr key="..." value(string)="..."
+[2026-07-27 12:00:00] JoinSession called SessionName="..." bPresenceEnabled=...
+[2026-07-27 12:00:00] JoinSession completed ResultCode=... (EOS_Success | EOS_Sessions_PlayerSanctioned | ...)
 ```
 
 For `SetParameter`, the `key` names are what to look for — anything
 filtering by region, platform, or a bucket ID tied to a data-center
 location. For `Platform_Create`, `SandboxId`/`OverrideCountryCode`/
 `OverrideLocaleCode` are the fields most likely to carry region info, if
-any does. For `Find`, `ResultCode=0` means `EOS_Success` — if the Russian
-cluster search comes back with `resultCount=0` and `ResultCode=0`, that's
-the backend legitimately returning an empty set (not an error), which is
-consistent with IP-based filtering.
+any does. For `Find`, a real, non-empty `resultCount` (as confirmed for
+the Russian cluster) rules out search-level filtering — check
+`bSanctionsEnabled` too: if it's `false` for every result, sanctions
+enforcement isn't even active for these sessions, ruling out
+`EOS_Sessions_PlayerSanctioned` before even looking at `JoinSession`. For
+`JoinSession`, the parenthesized name after `ResultCode` is the actual
+answer — anything other than `EOS_Success` is where "Session not found"
+is coming from.
+
+**Mock config caution:** don't give a fake session a `MAPNAME`/`BucketId`
+that duplicates a real session already in the same cluster — the game's
+per-map lookup appears to assume one session per map, and a duplicate
+reliably crashed the client in testing (this is separate from, and not
+caused by, the proxy or the mock code itself).
 
 ## 1. Get the export list
 
@@ -160,7 +188,7 @@ dumpbin /exports EOSSDK-Win64-Shipping.dll > exports.txt
 
 `eossdk_proxy.def`, `src/eossdk_thunks.asm`, and the name table in
 `src/dllmain.cpp` are all generated together from this export list (minus
-whichever names are hand-hooked in `src/hooks.cpp` — currently 13 of 677),
+whichever names are hand-hooked in `src/hooks.cpp` — currently 14 of 677),
 so they stay in sync with each other.
 
 ## 2. Build
@@ -200,6 +228,18 @@ path for your install):
 
 ## Next step
 
-Fill in `EOSProxy.mock.json` (copy from `EOSProxy.mock.json.example`) with
-the real cluster server's details and confirm it shows up in the matching
-cluster search / transfer UI in-game.
+Rebuild/redeploy and trigger the cluster transfer again. Check
+`EOSProxy.log` for:
+
+1. Each result's `bSanctionsEnabled` in the `Find` output.
+2. The `JoinSession completed ResultCode=... (name)` line — this should
+   name the actual failure directly.
+
+If it comes back `EOS_Sessions_PlayerSanctioned`, that's an account-level
+restriction enforced by Epic's backend, not something a client-side proxy
+can fix. If it's something else entirely, that reopens the investigation
+with a concrete error to chase instead of a guess.
+
+Separately: when testing `EOSProxy.mock.json`, give fake sessions map names
+that don't already exist in the real cluster result (see the caution
+above) to avoid crashing the client.
