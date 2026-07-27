@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(EOSProxy LANGUAGES CXX)
+project(EOSProxy LANGUAGES CXX ASM_MASM)
 
 if(NOT WIN32)
     message(FATAL_ERROR "This project only builds on Windows with MSVC (x64).")
@@ -7,6 +7,7 @@ endif()
 
 add_library(EOSSDK-Win64-Shipping SHARED
     src/dllmain.cpp
+    src/eossdk_thunks.asm
 )
 
 target_link_options(EOSSDK-Win64-Shipping PRIVATE
