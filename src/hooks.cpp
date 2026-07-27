@@ -16,22 +16,28 @@ extern "C" HMODULE g_thisModule;
 // OnFindComplete (below) calls them before their definitions appear. They
 // used to be plain thunk exports; now they're real hooked implementations
 // that check for injected fake sessions before delegating to the original.
-extern "C" uint32_t EOS_CALL EOS_SessionSearch_GetSearchResultCount(
+// Note: __declspec(dllexport) has to be present here too, not just on the
+// definitions below - MSVC treats a plain extern "C" declaration followed by
+// a dllexport'd definition of the same function as a linkage mismatch
+// (error C2375), not as adding the attribute at definition time.
+extern "C" __declspec(dllexport) uint32_t EOS_CALL EOS_SessionSearch_GetSearchResultCount(
     EOS_HSessionSearch Handle, const EOS_SessionSearch_GetSearchResultCountOptions* Options);
-extern "C" EOS_EResult EOS_CALL EOS_SessionSearch_CopySearchResultByIndex(
+extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_SessionSearch_CopySearchResultByIndex(
     EOS_HSessionSearch Handle, const EOS_SessionSearch_CopySearchResultByIndexOptions* Options,
     EOS_HSessionDetails* OutSessionHandle);
-extern "C" EOS_EResult EOS_CALL EOS_SessionDetails_CopyInfo(
+extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_SessionDetails_CopyInfo(
     EOS_HSessionDetails Handle, const EOS_SessionDetails_CopyInfoOptions* Options,
     EOS_SessionDetails_Info** OutSessionInfo);
-extern "C" void EOS_CALL EOS_SessionDetails_Info_Release(EOS_SessionDetails_Info* SessionInfo);
-extern "C" uint32_t EOS_CALL EOS_SessionDetails_GetSessionAttributeCount(
+extern "C" __declspec(dllexport) void EOS_CALL EOS_SessionDetails_Info_Release(
+    EOS_SessionDetails_Info* SessionInfo);
+extern "C" __declspec(dllexport) uint32_t EOS_CALL EOS_SessionDetails_GetSessionAttributeCount(
     EOS_HSessionDetails Handle, const EOS_SessionDetails_GetSessionAttributeCountOptions* Options);
-extern "C" EOS_EResult EOS_CALL EOS_SessionDetails_CopySessionAttributeByIndex(
+extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_SessionDetails_CopySessionAttributeByIndex(
     EOS_HSessionDetails Handle, const EOS_SessionDetails_CopySessionAttributeByIndexOptions* Options,
     EOS_SessionDetails_Attribute** OutSessionAttribute);
-extern "C" void EOS_CALL EOS_SessionDetails_Attribute_Release(EOS_SessionDetails_Attribute* SessionAttribute);
-extern "C" void EOS_CALL EOS_SessionDetails_Release(EOS_HSessionDetails SessionHandle);
+extern "C" __declspec(dllexport) void EOS_CALL EOS_SessionDetails_Attribute_Release(
+    EOS_SessionDetails_Attribute* SessionAttribute);
+extern "C" __declspec(dllexport) void EOS_CALL EOS_SessionDetails_Release(EOS_HSessionDetails SessionHandle);
 
 namespace {
 
