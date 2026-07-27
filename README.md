@@ -40,28 +40,47 @@ stub/name list (`eossdk_proxy.def`, `src/eossdk_thunks.asm`,
 instead, exported via `__declspec(dllexport)` and resolving/calling the
 original itself.
 
-**`EOS_SessionSearch_SetParameter` is intercepted this way today**
-(`src/hooks.cpp`), purely for logging: it writes every search-filter key,
-comparison op, and value the game sets before starting a session search
-to `EOSProxy.log` (next to the DLL), then calls straight through to the
-original with unmodified parameters — behavior is unchanged, we're just
-watching. `src/eos_types.h` has the minimal struct/enum definitions this
-needs, hand-written from Epic's public API reference (field layout is a
-documented public contract, not copied SDK source).
+**Four functions are intercepted this way today** (`src/hooks.cpp`), all
+purely for logging — each calls straight through to the original with
+unmodified parameters, so behavior is unchanged, we're just watching:
 
-## Reading the search parameter log
+- `EOS_SessionSearch_SetParameter` — logs every search-filter key,
+  comparison op, and value the game sets before starting a session search.
+  Checked first: none of ARK's search filters (`OFFICIALSERVER`,
+  `ISPRIVATE`, `minslotsavailable`, `ClusterId`, `SERVERPLATFORMTYPE`,
+  `BuildId`, `__EOS_bListening`) carry anything region/country-related, so
+  the empty Russian-cluster list isn't an explicit search parameter.
+- `EOS_Platform_Create` — logs `ProductId`, `SandboxId`, `ClientId`,
+  `bIsServer`, `OverrideCountryCode`, `OverrideLocaleCode` from the options
+  struct passed at startup (only the leading fields are read — EOS only
+  ever appends new fields to these structs, never reorders, so reading a
+  struct "prefix" is safe regardless of exactly which SDK version ARK
+  built against).
+- `EOS_Platform_SetOverrideCountryCode` / `EOS_Platform_SetOverrideLocaleCode`
+  — logs whatever value the game sets at runtime. Epic's own docs for the
+  country code variant say it's *"not currently used for anything
+  internally"*, so this is likely a dead end for the filtering question,
+  but it's cheap to confirm rather than assume.
 
-After deploying and running a search (e.g. opening the server browser or
-attempting a cluster transfer), check `EOSProxy.log` next to the DLL. Each
-line looks like:
+`src/eos_types.h` has the minimal struct/enum definitions these hooks need,
+hand-written from Epic's public API reference (dev.epicgames.com/docs) —
+field layout is a documented public contract, not copied SDK source.
+
+## Reading the log
+
+After deploying and triggering the relevant action (launch, login, or a
+search), check `EOSProxy.log` next to the DLL. Lines look like:
 
 ```
 [2026-07-27 12:00:00] SetParameter key="SESSIONFILTER_..." op=EQUAL value(string)="..."
+[2026-07-27 12:00:00] Platform_Create ProductId="..." SandboxId="..." ClientId="..." bIsServer=false OverrideCountryCode="(null)" OverrideLocaleCode="(null)"
 ```
 
-The `key` names are what to look for — anything filtering by region,
-platform, or a bucket ID tied to a data-center location is the likely
-culprit for the empty cross-server list.
+For `SetParameter`, the `key` names are what to look for — anything
+filtering by region, platform, or a bucket ID tied to a data-center
+location. For `Platform_Create`, `SandboxId`/`OverrideCountryCode`/
+`OverrideLocaleCode` are the fields most likely to carry region info, if
+any does.
 
 ## 1. Get the export list
 

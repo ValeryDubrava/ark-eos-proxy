@@ -13,6 +13,7 @@
 using EOS_Bool = int32_t;
 using EOS_EResult = int32_t;
 using EOS_HSessionSearch = struct EOS_SessionSearchHandle*;
+using EOS_HPlatform = struct EOS_PlatformHandle*;
 
 enum EOS_EAttributeType : int32_t {
     EOS_AT_BOOLEAN = 0,
@@ -49,4 +50,26 @@ struct EOS_SessionSearch_SetParameterOptions {
     int32_t ApiVersion;
     const EOS_Sessions_AttributeData* Parameter;
     EOS_EComparisonOp ComparisonOp;
+};
+
+struct EOS_Platform_ClientCredentials {
+    const char* ClientId;
+    const char* ClientSecret;
+};
+
+// EOS never reorders struct fields across SDK versions, only appends new ones
+// at the end (that's what ApiVersion is for) - so mirroring just the leading
+// fields of EOS_Platform_Options is safe even without knowing every field
+// this particular build appended later. We only read up through
+// OverrideLocaleCode; anything after that in the real struct is untouched.
+struct EOS_Platform_Options_Prefix {
+    int32_t ApiVersion;
+    void* Reserved;
+    const char* ProductId;
+    const char* SandboxId;
+    EOS_Platform_ClientCredentials ClientCredentials;
+    EOS_Bool bIsServer;
+    const char* EncryptionKey;
+    const char* OverrideCountryCode;
+    const char* OverrideLocaleCode;
 };

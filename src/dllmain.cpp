@@ -1,13 +1,13 @@
 #include <windows.h>
 
-extern "C" unsigned long long g_thunkTargets[676];
+extern "C" unsigned long long g_thunkTargets[673];
 extern "C" HMODULE g_originalModule = nullptr;
 extern "C" HMODULE g_thisModule = nullptr;
 
 namespace {
 constexpr const char* kOriginalDllName = "EOSSDK_Win64_Shipping_orig.dll";
 
-const char* const kExportNames[676] = {
+const char* const kExportNames[673] = {
     "EOS_Achievements_AddNotifyAchievementsUnlocked",
     "EOS_Achievements_AddNotifyAchievementsUnlockedV2",
     "EOS_Achievements_CopyAchievementDefinitionByAchievementId",
@@ -406,7 +406,6 @@ const char* const kExportNames[676] = {
     "EOS_P2P_SetPortRange",
     "EOS_P2P_SetRelayControl",
     "EOS_Platform_CheckForLauncherAndRestart",
-    "EOS_Platform_Create",
     "EOS_Platform_GetAchievementsInterface",
     "EOS_Platform_GetActiveCountryCode",
     "EOS_Platform_GetActiveLocaleCode",
@@ -444,8 +443,6 @@ const char* const kExportNames[676] = {
     "EOS_Platform_Release",
     "EOS_Platform_SetApplicationStatus",
     "EOS_Platform_SetNetworkStatus",
-    "EOS_Platform_SetOverrideCountryCode",
-    "EOS_Platform_SetOverrideLocaleCode",
     "EOS_Platform_Tick",
     "EOS_PlayerDataStorageFileTransferRequest_CancelRequest",
     "EOS_PlayerDataStorageFileTransferRequest_GetFileRequestState",
@@ -700,7 +697,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
     }
     g_originalModule = original;
 
-    for (int i = 0; i < 676; ++i) {
+    for (int i = 0; i < 673; ++i) {
         void* proc = reinterpret_cast<void*>(GetProcAddress(original, kExportNames[i]));
         if (!proc) {
             return FALSE;

@@ -398,7 +398,6 @@ EXPORTS
     EOS_P2P_SetPortRange
     EOS_P2P_SetRelayControl
     EOS_Platform_CheckForLauncherAndRestart
-    EOS_Platform_Create
     EOS_Platform_GetAchievementsInterface
     EOS_Platform_GetActiveCountryCode
     EOS_Platform_GetActiveLocaleCode
@@ -436,8 +435,6 @@ EXPORTS
     EOS_Platform_Release
     EOS_Platform_SetApplicationStatus
     EOS_Platform_SetNetworkStatus
-    EOS_Platform_SetOverrideCountryCode
-    EOS_Platform_SetOverrideLocaleCode
     EOS_Platform_Tick
     EOS_PlayerDataStorageFileTransferRequest_CancelRequest
     EOS_PlayerDataStorageFileTransferRequest_GetFileRequestState

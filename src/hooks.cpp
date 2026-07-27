@@ -42,6 +42,10 @@ void LogLine(const char* fmt, ...) {
     fclose(f);
 }
 
+const char* SafeStr(const char* s) {
+    return s ? s : "(null)";
+}
+
 const char* ComparisonOpName(EOS_EComparisonOp op) {
     switch (op) {
         case EOS_CO_EQUAL: return "EQUAL";
@@ -62,6 +66,28 @@ using SetParameterFn = EOS_EResult(EOS_CALL*)(EOS_HSessionSearch, const EOS_Sess
 SetParameterFn ResolveOriginal() {
     static SetParameterFn original = reinterpret_cast<SetParameterFn>(
         GetProcAddress(g_originalModule, "EOS_SessionSearch_SetParameter"));
+    return original;
+}
+
+using PlatformCreateFn = EOS_HPlatform(EOS_CALL*)(const EOS_Platform_Options_Prefix*);
+
+PlatformCreateFn ResolvePlatformCreate() {
+    static PlatformCreateFn original = reinterpret_cast<PlatformCreateFn>(
+        GetProcAddress(g_originalModule, "EOS_Platform_Create"));
+    return original;
+}
+
+using SetOverrideCodeFn = EOS_EResult(EOS_CALL*)(EOS_HPlatform, const char*);
+
+SetOverrideCodeFn ResolveSetOverrideCountryCode() {
+    static SetOverrideCodeFn original = reinterpret_cast<SetOverrideCodeFn>(
+        GetProcAddress(g_originalModule, "EOS_Platform_SetOverrideCountryCode"));
+    return original;
+}
+
+SetOverrideCodeFn ResolveSetOverrideLocaleCode() {
+    static SetOverrideCodeFn original = reinterpret_cast<SetOverrideCodeFn>(
+        GetProcAddress(g_originalModule, "EOS_Platform_SetOverrideLocaleCode"));
     return original;
 }
 
@@ -105,4 +131,57 @@ extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_SessionSearch_SetParam
     }
 
     return original(Handle, Options);
+}
+
+// Logged purely as a "does this carry region/locale info" probe - Epic's own
+// docs for SetOverrideCountryCode say it's "not currently used for anything
+// internally", so this is unlikely to be the filtering mechanism, but it's
+// cheap to watch anyway.
+extern "C" __declspec(dllexport) EOS_HPlatform EOS_CALL EOS_Platform_Create(
+    const EOS_Platform_Options_Prefix* Options) {
+    if (Options) {
+        LogLine(
+            "Platform_Create ProductId=\"%s\" SandboxId=\"%s\" ClientId=\"%s\" "
+            "bIsServer=%s OverrideCountryCode=\"%s\" OverrideLocaleCode=\"%s\"",
+            SafeStr(Options->ProductId), SafeStr(Options->SandboxId),
+            SafeStr(Options->ClientCredentials.ClientId),
+            Options->bIsServer ? "true" : "false",
+            SafeStr(Options->OverrideCountryCode), SafeStr(Options->OverrideLocaleCode));
+    } else {
+        LogLine("Platform_Create called with null Options");
+    }
+
+    PlatformCreateFn original = ResolvePlatformCreate();
+    if (!original) {
+        LogLine("Platform_Create: failed to resolve original function");
+        return nullptr;
+    }
+
+    return original(Options);
+}
+
+extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_Platform_SetOverrideCountryCode(
+    EOS_HPlatform Handle, const char* NewCountryCode) {
+    LogLine("Platform_SetOverrideCountryCode value=\"%s\"", SafeStr(NewCountryCode));
+
+    SetOverrideCodeFn original = ResolveSetOverrideCountryCode();
+    if (!original) {
+        LogLine("Platform_SetOverrideCountryCode: failed to resolve original function");
+        return -1;
+    }
+
+    return original(Handle, NewCountryCode);
+}
+
+extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_Platform_SetOverrideLocaleCode(
+    EOS_HPlatform Handle, const char* NewLocaleCode) {
+    LogLine("Platform_SetOverrideLocaleCode value=\"%s\"", SafeStr(NewLocaleCode));
+
+    SetOverrideCodeFn original = ResolveSetOverrideLocaleCode();
+    if (!original) {
+        LogLine("Platform_SetOverrideLocaleCode: failed to resolve original function");
+        return -1;
+    }
+
+    return original(Handle, NewLocaleCode);
 }
