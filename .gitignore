@@ -8,3 +8,8 @@ cmake-build-*/
 .idea/
 CMakeCache.txt
 CMakeFiles/
+
+# Real mock config contains actual server IPs/session data - keep the
+# .example template tracked, not this.
+EOSProxy.mock.json
+EOSProxy.log

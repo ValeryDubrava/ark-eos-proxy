@@ -1,0 +1,33 @@
+{
+  "sessions": [
+    {
+      "sessionId": "manual-fake-0001",
+      "hostAddress": "203.0.113.10",
+      "numOpenPublicConnections": 10,
+      "bucketId": "TestGameMode_C:<None>:TheIsland_WP",
+      "numPublicConnections": 10,
+      "permissionLevel": 0,
+      "allowJoinInProgress": true,
+      "ownerServerClientId": "xyza7891muomRmynIIHaJB9COBKkwj6n",
+      "attributes": {
+        "CLUSTERID": "PlayZone_cluster",
+        "SESSIONNAME": "My Server Name - (v92.25)",
+        "SESSIONNAMEUPPER": "MY SERVER NAME - (V92.25)",
+        "CUSTOMSERVERNAME": "My Server Name",
+        "MAPNAME": "TheIsland_WP",
+        "FRIENDLYMAPNAME": "TheIsland_WP",
+        "ADDRESSBOUND": "203.0.113.10:7777",
+        "BUILDID": "92",
+        "MINORBUILDID": "25",
+        "OFFICIALSERVER": "0",
+        "ISPRIVATE": 0,
+        "SERVERPASSWORD": false,
+        "SESSIONISPVE": 0,
+        "SERVERPLATFORMTYPE": "PC+PS5+XSX+WINGDK",
+        "GAMEMODE": "TestGameMode_C",
+        "__EOS_BLISTENING": true,
+        "__EOS_BUSESPRESENCE": true
+      }
+    }
+  ]
+}

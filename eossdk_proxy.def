@@ -558,13 +558,7 @@ EXPORTS
     EOS_Sanctions_GetPlayerSanctionCount
     EOS_Sanctions_PlayerSanction_Release
     EOS_Sanctions_QueryActivePlayerSanctions
-    EOS_SessionDetails_Attribute_Release
-    EOS_SessionDetails_CopyInfo
-    EOS_SessionDetails_CopySessionAttributeByIndex
     EOS_SessionDetails_CopySessionAttributeByKey
-    EOS_SessionDetails_GetSessionAttributeCount
-    EOS_SessionDetails_Info_Release
-    EOS_SessionDetails_Release
     EOS_SessionModification_AddAttribute
     EOS_SessionModification_Release
     EOS_SessionModification_RemoveAttribute
@@ -575,8 +569,6 @@ EXPORTS
     EOS_SessionModification_SetJoinInProgressAllowed
     EOS_SessionModification_SetMaxPlayers
     EOS_SessionModification_SetPermissionLevel
-    EOS_SessionSearch_CopySearchResultByIndex
-    EOS_SessionSearch_GetSearchResultCount
     EOS_SessionSearch_Release
     EOS_SessionSearch_RemoveParameter
     EOS_SessionSearch_SetMaxResults

@@ -1,13 +1,15 @@
 #include <windows.h>
 
-extern "C" unsigned long long g_thunkTargets[672];
+#include "session_mock.h"
+
+extern "C" unsigned long long g_thunkTargets[664];
 extern "C" HMODULE g_originalModule = nullptr;
 extern "C" HMODULE g_thisModule = nullptr;
 
 namespace {
 constexpr const char* kOriginalDllName = "EOSSDK_Win64_Shipping_orig.dll";
 
-const char* const kExportNames[672] = {
+const char* const kExportNames[664] = {
     "EOS_Achievements_AddNotifyAchievementsUnlocked",
     "EOS_Achievements_AddNotifyAchievementsUnlockedV2",
     "EOS_Achievements_CopyAchievementDefinitionByAchievementId",
@@ -566,13 +568,7 @@ const char* const kExportNames[672] = {
     "EOS_Sanctions_GetPlayerSanctionCount",
     "EOS_Sanctions_PlayerSanction_Release",
     "EOS_Sanctions_QueryActivePlayerSanctions",
-    "EOS_SessionDetails_Attribute_Release",
-    "EOS_SessionDetails_CopyInfo",
-    "EOS_SessionDetails_CopySessionAttributeByIndex",
     "EOS_SessionDetails_CopySessionAttributeByKey",
-    "EOS_SessionDetails_GetSessionAttributeCount",
-    "EOS_SessionDetails_Info_Release",
-    "EOS_SessionDetails_Release",
     "EOS_SessionModification_AddAttribute",
     "EOS_SessionModification_Release",
     "EOS_SessionModification_RemoveAttribute",
@@ -583,8 +579,6 @@ const char* const kExportNames[672] = {
     "EOS_SessionModification_SetJoinInProgressAllowed",
     "EOS_SessionModification_SetMaxPlayers",
     "EOS_SessionModification_SetPermissionLevel",
-    "EOS_SessionSearch_CopySearchResultByIndex",
-    "EOS_SessionSearch_GetSearchResultCount",
     "EOS_SessionSearch_Release",
     "EOS_SessionSearch_RemoveParameter",
     "EOS_SessionSearch_SetMaxResults",
@@ -696,13 +690,15 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
     }
     g_originalModule = original;
 
-    for (int i = 0; i < 672; ++i) {
+    for (int i = 0; i < 664; ++i) {
         void* proc = reinterpret_cast<void*>(GetProcAddress(original, kExportNames[i]));
         if (!proc) {
             return FALSE;
         }
         g_thunkTargets[i] = reinterpret_cast<unsigned long long>(proc);
     }
+
+    mock::Init(hModule);
 
     return TRUE;
 }

@@ -6,17 +6,16 @@
 #include <ctime>
 
 #include "eos_types.h"
+#include "session_mock.h"
 
 extern "C" HMODULE g_originalModule;
 extern "C" HMODULE g_thisModule;
 
-// Read-only helpers called directly below (GetSearchResultCount,
-// CopySearchResultByIndex, SessionDetails_CopyInfo/GetSessionAttributeCount/
-// CopySessionAttributeByIndex, and the three _Release functions) are not
-// hooked - they're still present as ordinary thunk exports in this same
-// binary (see src/eossdk_thunks.asm), so declaring their signatures here and
-// calling them directly links straight to those thunks. No separate
-// GetProcAddress needed for them.
+// Forward declarations for the read-chain functions defined near the bottom
+// of this file (search "Mock session injection"), needed here because
+// OnFindComplete (below) calls them before their definitions appear. They
+// used to be plain thunk exports; now they're real hooked implementations
+// that check for injected fake sessions before delegating to the original.
 extern "C" uint32_t EOS_CALL EOS_SessionSearch_GetSearchResultCount(
     EOS_HSessionSearch Handle, const EOS_SessionSearch_GetSearchResultCountOptions* Options);
 extern "C" EOS_EResult EOS_CALL EOS_SessionSearch_CopySearchResultByIndex(
@@ -216,6 +215,76 @@ void EOS_CALL OnFindComplete(const EOS_SessionSearch_FindCallbackInfo* Data) {
     }
 }
 
+using GetSearchResultCountFn =
+    uint32_t(EOS_CALL*)(EOS_HSessionSearch, const EOS_SessionSearch_GetSearchResultCountOptions*);
+
+GetSearchResultCountFn ResolveGetSearchResultCount() {
+    static GetSearchResultCountFn original = reinterpret_cast<GetSearchResultCountFn>(
+        GetProcAddress(g_originalModule, "EOS_SessionSearch_GetSearchResultCount"));
+    return original;
+}
+
+using CopySearchResultByIndexFn = EOS_EResult(EOS_CALL*)(
+    EOS_HSessionSearch, const EOS_SessionSearch_CopySearchResultByIndexOptions*, EOS_HSessionDetails*);
+
+CopySearchResultByIndexFn ResolveCopySearchResultByIndex() {
+    static CopySearchResultByIndexFn original = reinterpret_cast<CopySearchResultByIndexFn>(
+        GetProcAddress(g_originalModule, "EOS_SessionSearch_CopySearchResultByIndex"));
+    return original;
+}
+
+using SessionDetailsCopyInfoFn = EOS_EResult(EOS_CALL*)(
+    EOS_HSessionDetails, const EOS_SessionDetails_CopyInfoOptions*, EOS_SessionDetails_Info**);
+
+SessionDetailsCopyInfoFn ResolveSessionDetailsCopyInfo() {
+    static SessionDetailsCopyInfoFn original = reinterpret_cast<SessionDetailsCopyInfoFn>(
+        GetProcAddress(g_originalModule, "EOS_SessionDetails_CopyInfo"));
+    return original;
+}
+
+using GetSessionAttributeCountFn =
+    uint32_t(EOS_CALL*)(EOS_HSessionDetails, const EOS_SessionDetails_GetSessionAttributeCountOptions*);
+
+GetSessionAttributeCountFn ResolveGetSessionAttributeCount() {
+    static GetSessionAttributeCountFn original = reinterpret_cast<GetSessionAttributeCountFn>(
+        GetProcAddress(g_originalModule, "EOS_SessionDetails_GetSessionAttributeCount"));
+    return original;
+}
+
+using CopySessionAttributeByIndexFn = EOS_EResult(EOS_CALL*)(
+    EOS_HSessionDetails, const EOS_SessionDetails_CopySessionAttributeByIndexOptions*,
+    EOS_SessionDetails_Attribute**);
+
+CopySessionAttributeByIndexFn ResolveCopySessionAttributeByIndex() {
+    static CopySessionAttributeByIndexFn original = reinterpret_cast<CopySessionAttributeByIndexFn>(
+        GetProcAddress(g_originalModule, "EOS_SessionDetails_CopySessionAttributeByIndex"));
+    return original;
+}
+
+using SessionDetailsInfoReleaseFn = void(EOS_CALL*)(EOS_SessionDetails_Info*);
+
+SessionDetailsInfoReleaseFn ResolveSessionDetailsInfoRelease() {
+    static SessionDetailsInfoReleaseFn original = reinterpret_cast<SessionDetailsInfoReleaseFn>(
+        GetProcAddress(g_originalModule, "EOS_SessionDetails_Info_Release"));
+    return original;
+}
+
+using SessionDetailsAttributeReleaseFn = void(EOS_CALL*)(EOS_SessionDetails_Attribute*);
+
+SessionDetailsAttributeReleaseFn ResolveSessionDetailsAttributeRelease() {
+    static SessionDetailsAttributeReleaseFn original = reinterpret_cast<SessionDetailsAttributeReleaseFn>(
+        GetProcAddress(g_originalModule, "EOS_SessionDetails_Attribute_Release"));
+    return original;
+}
+
+using SessionDetailsReleaseFn = void(EOS_CALL*)(EOS_HSessionDetails);
+
+SessionDetailsReleaseFn ResolveSessionDetailsRelease() {
+    static SessionDetailsReleaseFn original = reinterpret_cast<SessionDetailsReleaseFn>(
+        GetProcAddress(g_originalModule, "EOS_SessionDetails_Release"));
+    return original;
+}
+
 }  // namespace
 
 extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_SessionSearch_SetParameter(
@@ -244,6 +313,10 @@ extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_SessionSearch_SetParam
                 LogLine("SetParameter key=\"%s\" op=%s value type=%d (unknown)",
                         param.Key, op, static_cast<int>(param.ValueType));
                 break;
+        }
+        if (param.Key && param.ValueType == EOS_AT_STRING && param.Value.AsUtf8 &&
+            std::strcmp(param.Key, "ClusterId") == 0) {
+            mock::RecordSearchClusterId(Handle, param.Value.AsUtf8);
         }
     } else {
         LogLine("SetParameter called with null Options/Parameter");
@@ -331,4 +404,144 @@ extern "C" __declspec(dllexport) void EOS_CALL EOS_SessionSearch_Find(
 
     auto* ctx = new FindContext{ClientData, CompletionDelegate, Handle};
     original(Handle, Options, ctx, OnFindComplete);
+}
+
+// --- Mock session injection ---
+// These five functions are the ones the game actually calls to read search
+// results (Find's callback only signals completion). Each one checks
+// whether the handle/index refers to one of our injected fake sessions
+// first; if not, it delegates to the real function exactly as the generic
+// thunks would have. Real result count/indices are always handled first, so
+// injected entries only ever appear at the end of the list.
+
+extern "C" __declspec(dllexport) uint32_t EOS_CALL EOS_SessionSearch_GetSearchResultCount(
+    EOS_HSessionSearch Handle, const EOS_SessionSearch_GetSearchResultCountOptions* Options) {
+    GetSearchResultCountFn original = ResolveGetSearchResultCount();
+    uint32_t realCount = original ? original(Handle, Options) : 0;
+    return realCount + static_cast<uint32_t>(mock::MatchesForSearch(Handle).size());
+}
+
+extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_SessionSearch_CopySearchResultByIndex(
+    EOS_HSessionSearch Handle, const EOS_SessionSearch_CopySearchResultByIndexOptions* Options,
+    EOS_HSessionDetails* OutSessionHandle) {
+    if (!Options || !OutSessionHandle) {
+        return -1;
+    }
+
+    EOS_SessionSearch_GetSearchResultCountOptions countOpts{1};
+    GetSearchResultCountFn countFn = ResolveGetSearchResultCount();
+    uint32_t realCount = countFn ? countFn(Handle, &countOpts) : 0;
+
+    if (Options->SessionIndex < realCount) {
+        CopySearchResultByIndexFn original = ResolveCopySearchResultByIndex();
+        if (!original) {
+            return -1;
+        }
+        return original(Handle, Options, OutSessionHandle);
+    }
+
+    auto matches = mock::MatchesForSearch(Handle);
+    uint32_t fakeIndex = Options->SessionIndex - realCount;
+    if (fakeIndex >= matches.size()) {
+        return -1;
+    }
+
+    *OutSessionHandle = reinterpret_cast<EOS_HSessionDetails>(const_cast<mock::FakeSession*>(matches[fakeIndex]));
+    return EOS_Success;
+}
+
+extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_SessionDetails_CopyInfo(
+    EOS_HSessionDetails Handle, const EOS_SessionDetails_CopyInfoOptions* Options,
+    EOS_SessionDetails_Info** OutSessionInfo) {
+    if (!OutSessionInfo) {
+        return -1;
+    }
+
+    if (mock::IsFakeDetailsHandle(Handle)) {
+        *OutSessionInfo = mock::CreateInfo(mock::ResolveFakeDetailsHandle(Handle));
+        return EOS_Success;
+    }
+
+    SessionDetailsCopyInfoFn original = ResolveSessionDetailsCopyInfo();
+    if (!original) {
+        return -1;
+    }
+    return original(Handle, Options, OutSessionInfo);
+}
+
+extern "C" __declspec(dllexport) uint32_t EOS_CALL EOS_SessionDetails_GetSessionAttributeCount(
+    EOS_HSessionDetails Handle, const EOS_SessionDetails_GetSessionAttributeCountOptions* Options) {
+    if (mock::IsFakeDetailsHandle(Handle)) {
+        return static_cast<uint32_t>(mock::ResolveFakeDetailsHandle(Handle).attributes.size());
+    }
+
+    GetSessionAttributeCountFn original = ResolveGetSessionAttributeCount();
+    return original ? original(Handle, Options) : 0;
+}
+
+extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_SessionDetails_CopySessionAttributeByIndex(
+    EOS_HSessionDetails Handle, const EOS_SessionDetails_CopySessionAttributeByIndexOptions* Options,
+    EOS_SessionDetails_Attribute** OutSessionAttribute) {
+    if (!Options || !OutSessionAttribute) {
+        return -1;
+    }
+
+    if (mock::IsFakeDetailsHandle(Handle)) {
+        const mock::FakeSession& session = mock::ResolveFakeDetailsHandle(Handle);
+        if (Options->AttrIndex >= session.attributes.size()) {
+            return -1;
+        }
+        const auto& kv = session.attributes[Options->AttrIndex];
+        *OutSessionAttribute = mock::CreateAttribute(kv.first, kv.second);
+        return EOS_Success;
+    }
+
+    CopySessionAttributeByIndexFn original = ResolveCopySessionAttributeByIndex();
+    if (!original) {
+        return -1;
+    }
+    return original(Handle, Options, OutSessionAttribute);
+}
+
+extern "C" __declspec(dllexport) void EOS_CALL EOS_SessionDetails_Info_Release(
+    EOS_SessionDetails_Info* SessionInfo) {
+    if (!SessionInfo) {
+        return;
+    }
+    if (mock::IsFakeInfo(SessionInfo)) {
+        mock::ReleaseInfo(SessionInfo);
+        return;
+    }
+    SessionDetailsInfoReleaseFn original = ResolveSessionDetailsInfoRelease();
+    if (original) {
+        original(SessionInfo);
+    }
+}
+
+extern "C" __declspec(dllexport) void EOS_CALL EOS_SessionDetails_Attribute_Release(
+    EOS_SessionDetails_Attribute* SessionAttribute) {
+    if (!SessionAttribute) {
+        return;
+    }
+    if (mock::IsFakeAttribute(SessionAttribute)) {
+        mock::ReleaseAttribute(SessionAttribute);
+        return;
+    }
+    SessionDetailsAttributeReleaseFn original = ResolveSessionDetailsAttributeRelease();
+    if (original) {
+        original(SessionAttribute);
+    }
+}
+
+extern "C" __declspec(dllexport) void EOS_CALL EOS_SessionDetails_Release(EOS_HSessionDetails SessionHandle) {
+    if (!SessionHandle) {
+        return;
+    }
+    if (mock::IsFakeDetailsHandle(SessionHandle)) {
+        return;  // points into our static session list - nothing to free
+    }
+    SessionDetailsReleaseFn original = ResolveSessionDetailsRelease();
+    if (original) {
+        original(SessionHandle);
+    }
 }

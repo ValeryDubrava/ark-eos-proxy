@@ -40,9 +40,11 @@ stub/name list (`eossdk_proxy.def`, `src/eossdk_thunks.asm`,
 instead, exported via `__declspec(dllexport)` and resolving/calling the
 original itself.
 
-**Five functions are intercepted this way today** (`src/hooks.cpp`), all
-purely for logging — each calls straight through to the original with
-unmodified parameters, so behavior is unchanged, we're just watching:
+**Thirteen functions are intercepted this way today** (`src/hooks.cpp`). Five
+are purely for logging (call straight through, unmodified); the other eight
+implement mock session injection (see below).
+
+### Logging hooks
 
 - `EOS_SessionSearch_SetParameter` — logs every search-filter key,
   comparison op, and value the game sets before starting a session search.
@@ -69,26 +71,58 @@ unmodified parameters, so behavior is unchanged, we're just watching:
   key/value attribute on the session), logs all of it, releases the
   handles, then calls the game's original callback with its original
   `ClientData` restored — so from the game's point of view nothing
-  changed. The helper functions it calls
-  (`GetSearchResultCount`/`CopySearchResultByIndex`/`SessionDetails_CopyInfo`/
-  `GetSessionAttributeCount`/`CopySessionAttributeByIndex`/the three
-  `_Release` functions) aren't hooked — they're declared `extern "C"` and
-  called directly, which links straight to this DLL's own thunk exports
-  for them (see `src/eossdk_thunks.asm`), no separate `GetProcAddress`
-  needed.
+  changed.
 
-With no explicit region parameter anywhere client-side (search filters,
-platform options, or overrides), the working theory has shifted from "some
-session parameter defined elsewhere" to the backend filtering by the
-caller's IP. `EOS_SessionSearch_Find`'s logging is the groundwork for
-testing that: once we know the exact shape of a real search result, the
-next step is mocking/injecting a fabricated result for the Russian cluster
-session (which is already reachable by direct IP) so the game's own
-UI/join flow can use it instead of direct-connect.
+Root-cause hunting stopped here: no explicit region parameter appeared
+anywhere client-side (search filters, platform options, overrides), and a
+VPN test (different exit country, confirmed via `tracert` to actually route
+differently) made no difference to the empty cluster-search result either —
+ruling out both a locally-visible parameter and simple client-IP-path
+filtering. Whatever the exact backend mechanism (Steam account region is
+the leading remaining guess, but hard to verify directly), the practical
+fix doesn't require knowing it: mock injection (below) supplies the
+connection info the game needs directly, sidestepping the search instead of
+fixing it.
 
 `src/eos_types.h` has the minimal struct/enum definitions these hooks need,
 hand-written from Epic's public API reference (dev.epicgames.com/docs) —
 field layout is a documented public contract, not copied SDK source.
+
+### Mock session injection
+
+The game doesn't get search results through `Find`'s callback — it just
+gets a completion signal, then calls `GetSearchResultCount` /
+`CopySearchResultByIndex` / `SessionDetails_CopyInfo` /
+`GetSessionAttributeCount` / `CopySessionAttributeByIndex` (plus the three
+`_Release` functions) itself afterward to enumerate results. So injecting a
+fake result means intercepting that whole chain, not just `Find`:
+
+- **`src/session_mock.h` / `.cpp`** load `EOSProxy.mock.json` (next to the
+  DLL; see `EOSProxy.mock.json.example` for the format) into a static list
+  of `FakeSession`s at startup. `EOS_SessionSearch_SetParameter`'s hook
+  additionally records which `ClusterId` (if any) each search handle was
+  constrained to, so a search can be matched against fake sessions whose
+  `CLUSTERID` attribute equals it.
+- Fake `EOS_HSessionDetails` handles are just pointers into that static
+  list — stable for the process's lifetime, nothing to allocate or
+  release. `EOS_SessionDetails_Info`/`EOS_SessionDetails_Attribute` *are*
+  real per-call heap allocations (matching the real SDK's "copy" semantics,
+  where the caller must `_Release` each one), tracked in small registries
+  so the `_Release` hooks can tell a fake one from a real one without ever
+  touching a pointer we don't own.
+- Each of the eight hooked functions checks "is this handle/index one of
+  ours?" first; real results/indices always come first, so injected
+  sessions only ever appear appended at the end of a real result set —
+  nothing about existing search behavior changes when there's no match.
+
+Uses `nlohmann/json` (vendored single header, MIT-licensed, in
+`third_party/nlohmann/json.hpp`) to parse the config — no other
+dependencies.
+
+**Note:** `EOSProxy.mock.json` (the real one, with actual server IPs) is
+gitignored — only the `.example` template is tracked. Copy it, edit in your
+server's real details, matching `CLUSTERID` to whatever cluster search you
+want it to appear in.
 
 ## Reading the log
 
@@ -126,7 +160,7 @@ dumpbin /exports EOSSDK-Win64-Shipping.dll > exports.txt
 
 `eossdk_proxy.def`, `src/eossdk_thunks.asm`, and the name table in
 `src/dllmain.cpp` are all generated together from this export list (minus
-whichever names are hand-hooked in `src/hooks.cpp` — currently 5 of 677),
+whichever names are hand-hooked in `src/hooks.cpp` — currently 13 of 677),
 so they stay in sync with each other.
 
 ## 2. Build
@@ -164,9 +198,8 @@ path for your install):
   integrity checks — pure passthrough is the safest way to find out before
   any real interception logic is added.
 
-## Next step (not yet implemented)
+## Next step
 
-Once pure passthrough is confirmed working, implement the relevant
-`EOS_SessionSearch_*` functions as real C++ exports instead of thunk stubs,
-each calling through to the resolved original pointer after adjusting
-parameters.
+Fill in `EOSProxy.mock.json` (copy from `EOSProxy.mock.json.example`) with
+the real cluster server's details and confirm it shows up in the matching
+cluster search / transfer UI in-game.

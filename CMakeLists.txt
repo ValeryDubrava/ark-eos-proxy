@@ -5,10 +5,18 @@ if(NOT WIN32)
     message(FATAL_ERROR "This project only builds on Windows with MSVC (x64).")
 endif()
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 add_library(EOSSDK-Win64-Shipping SHARED
     src/dllmain.cpp
     src/hooks.cpp
+    src/session_mock.cpp
     src/eossdk_thunks.asm
+)
+
+target_include_directories(EOSSDK-Win64-Shipping PRIVATE
+    third_party
 )
 
 target_link_options(EOSSDK-Win64-Shipping PRIVATE
