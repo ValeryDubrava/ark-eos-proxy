@@ -1,11 +1,13 @@
 #include <windows.h>
 
-extern "C" unsigned long long g_thunkTargets[677];
+extern "C" unsigned long long g_thunkTargets[676];
+extern "C" HMODULE g_originalModule = nullptr;
+extern "C" HMODULE g_thisModule = nullptr;
 
 namespace {
 constexpr const char* kOriginalDllName = "EOSSDK_Win64_Shipping_orig.dll";
 
-const char* const kExportNames[677] = {
+const char* const kExportNames[676] = {
     "EOS_Achievements_AddNotifyAchievementsUnlocked",
     "EOS_Achievements_AddNotifyAchievementsUnlockedV2",
     "EOS_Achievements_CopyAchievementDefinitionByAchievementId",
@@ -590,7 +592,6 @@ const char* const kExportNames[677] = {
     "EOS_SessionSearch_Release",
     "EOS_SessionSearch_RemoveParameter",
     "EOS_SessionSearch_SetMaxResults",
-    "EOS_SessionSearch_SetParameter",
     "EOS_SessionSearch_SetSessionId",
     "EOS_SessionSearch_SetTargetUserId",
     "EOS_Sessions_AddNotifyJoinSessionAccepted",
@@ -686,17 +687,20 @@ const char* const kExportNames[677] = {
 };
 }  // namespace
 
-BOOL APIENTRY DllMain(HMODULE, DWORD reason, LPVOID) {
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
     if (reason != DLL_PROCESS_ATTACH) {
         return TRUE;
     }
+
+    g_thisModule = hModule;
 
     HMODULE original = LoadLibraryA(kOriginalDllName);
     if (!original) {
         return FALSE;
     }
+    g_originalModule = original;
 
-    for (int i = 0; i < 677; ++i) {
+    for (int i = 0; i < 676; ++i) {
         void* proc = reinterpret_cast<void*>(GetProcAddress(original, kExportNames[i]));
         if (!proc) {
             return FALSE;

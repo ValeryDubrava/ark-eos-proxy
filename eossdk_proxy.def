@@ -584,7 +584,6 @@ EXPORTS
     EOS_SessionSearch_Release
     EOS_SessionSearch_RemoveParameter
     EOS_SessionSearch_SetMaxResults
-    EOS_SessionSearch_SetParameter
     EOS_SessionSearch_SetSessionId
     EOS_SessionSearch_SetTargetUserId
     EOS_Sessions_AddNotifyJoinSessionAccepted

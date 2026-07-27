@@ -34,11 +34,34 @@ Instead, this project uses a small assembly stub per export:
 No self-modifying code, no `VirtualProtect` patching — the indirection lives
 in a data table, not in the instruction stream.
 
-To later intercept specific calls (e.g. `EOS_SessionSearch_*`), replace the
-corresponding entry: write a real C++ function with `__declspec(dllexport)`
-implementing the tweaked logic (calling through to the resolved original
-pointer as needed), and drop that name from the generated stub/name list so
-there's no symbol clash.
+To intercept a specific call, its name is dropped from the generated
+stub/name list (`eossdk_proxy.def`, `src/eossdk_thunks.asm`,
+`src/dllmain.cpp`'s `kExportNames`), and a real C++ function is added
+instead, exported via `__declspec(dllexport)` and resolving/calling the
+original itself.
+
+**`EOS_SessionSearch_SetParameter` is intercepted this way today**
+(`src/hooks.cpp`), purely for logging: it writes every search-filter key,
+comparison op, and value the game sets before starting a session search
+to `EOSProxy.log` (next to the DLL), then calls straight through to the
+original with unmodified parameters — behavior is unchanged, we're just
+watching. `src/eos_types.h` has the minimal struct/enum definitions this
+needs, hand-written from Epic's public API reference (field layout is a
+documented public contract, not copied SDK source).
+
+## Reading the search parameter log
+
+After deploying and running a search (e.g. opening the server browser or
+attempting a cluster transfer), check `EOSProxy.log` next to the DLL. Each
+line looks like:
+
+```
+[2026-07-27 12:00:00] SetParameter key="SESSIONFILTER_..." op=EQUAL value(string)="..."
+```
+
+The `key` names are what to look for — anything filtering by region,
+platform, or a bucket ID tied to a data-center location is the likely
+culprit for the empty cross-server list.
 
 ## 1. Get the export list
 

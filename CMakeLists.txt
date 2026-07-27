@@ -7,6 +7,7 @@ endif()
 
 add_library(EOSSDK-Win64-Shipping SHARED
     src/dllmain.cpp
+    src/hooks.cpp
     src/eossdk_thunks.asm
 )
 
