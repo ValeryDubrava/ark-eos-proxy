@@ -7,10 +7,14 @@ endif()
 
 add_library(EOSSDK-Win64-Shipping SHARED
     src/dllmain.cpp
-    eossdk_proxy.def
+)
+
+target_link_options(EOSSDK-Win64-Shipping PRIVATE
+    "/DEF:${CMAKE_CURRENT_SOURCE_DIR}/eossdk_proxy.def"
 )
 
 set_target_properties(EOSSDK-Win64-Shipping PROPERTIES
     OUTPUT_NAME "EOSSDK-Win64-Shipping"
     SUFFIX ".dll"
+    LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/eossdk_proxy.def"
 )

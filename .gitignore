@@ -1,8 +1,10 @@
 build/
+cmake-build-*/
 *.dll
 *.pdb
 *.lib
 *.exp
 .vs/
+.idea/
 CMakeCache.txt
 CMakeFiles/

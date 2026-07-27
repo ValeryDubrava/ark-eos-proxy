@@ -12,11 +12,16 @@ A `.def` file can declare an export as a *forward* instead of a real function:
 
 ```
 EXPORTS
-    EOS_Initialize=EOSSDK-Win64-Shipping-orig.EOS_Initialize
+    EOS_Initialize=EOSSDK_Win64_Shipping_orig.EOS_Initialize
 ```
 
 This tells the loader "when something calls `EOS_Initialize` in this DLL,
-actually jump to `EOS_Initialize` in `EOSSDK-Win64-Shipping-orig.dll`". No C++
+actually jump to `EOS_Initialize` in `EOSSDK_Win64_Shipping_orig.dll`". Note
+the forward target uses underscores, not hyphens — MSVC's `.def` parser
+doesn't reliably recognize a hyphenated module name on the right-hand side of
+a forward (it silently falls back to treating the line as a plain export,
+which then fails to link with `LNK2001: unresolved external symbol` for
+every entry, since no such symbol is defined in this project). No C++
 code runs for forwarded exports — it's resolved entirely by the loader. Once
 this pure-forward version works, individual entries (e.g. the
 `EOS_SessionSearch_*` functions) can be switched from a forward to a real C++
@@ -55,7 +60,8 @@ In the game's `...\ShooterGame\Binaries\Win64\` folder (confirm the exact
 path for your install):
 
 1. Rename the real `EOSSDK-Win64-Shipping.dll` to
-   `EOSSDK-Win64-Shipping-orig.dll`.
+   `EOSSDK_Win64_Shipping_orig.dll` (underscores, matching the forward
+   target in `eossdk_proxy.def`).
 2. Copy the built proxy DLL in as `EOSSDK-Win64-Shipping.dll`.
 
 ## 4. Test
