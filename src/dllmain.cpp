@@ -1,13 +1,13 @@
 #include <windows.h>
 
-extern "C" unsigned long long g_thunkTargets[673];
+extern "C" unsigned long long g_thunkTargets[672];
 extern "C" HMODULE g_originalModule = nullptr;
 extern "C" HMODULE g_thisModule = nullptr;
 
 namespace {
 constexpr const char* kOriginalDllName = "EOSSDK_Win64_Shipping_orig.dll";
 
-const char* const kExportNames[673] = {
+const char* const kExportNames[672] = {
     "EOS_Achievements_AddNotifyAchievementsUnlocked",
     "EOS_Achievements_AddNotifyAchievementsUnlockedV2",
     "EOS_Achievements_CopyAchievementDefinitionByAchievementId",
@@ -584,7 +584,6 @@ const char* const kExportNames[673] = {
     "EOS_SessionModification_SetMaxPlayers",
     "EOS_SessionModification_SetPermissionLevel",
     "EOS_SessionSearch_CopySearchResultByIndex",
-    "EOS_SessionSearch_Find",
     "EOS_SessionSearch_GetSearchResultCount",
     "EOS_SessionSearch_Release",
     "EOS_SessionSearch_RemoveParameter",
@@ -697,7 +696,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
     }
     g_originalModule = original;
 
-    for (int i = 0; i < 673; ++i) {
+    for (int i = 0; i < 672; ++i) {
         void* proc = reinterpret_cast<void*>(GetProcAddress(original, kExportNames[i]));
         if (!proc) {
             return FALSE;

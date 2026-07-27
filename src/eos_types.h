@@ -12,8 +12,17 @@
 
 using EOS_Bool = int32_t;
 using EOS_EResult = int32_t;
+constexpr EOS_EResult EOS_Success = 0;  // first EOS_EResult enumerator, guaranteed 0
+
 using EOS_HSessionSearch = struct EOS_SessionSearchHandle*;
+using EOS_HSessionDetails = struct EOS_SessionDetailsHandle*;
 using EOS_HPlatform = struct EOS_PlatformHandle*;
+using EOS_ProductUserId = struct EOS_ProductUserIdHandle*;
+
+// Placeholder for an enum we never need to interpret, only forward/log as a
+// raw integer (permission level, advertisement type).
+using EOS_EOnlineSessionPermissionLevel = int32_t;
+using EOS_ESessionAttributeAdvertisementType = int32_t;
 
 enum EOS_EAttributeType : int32_t {
     EOS_AT_BOOLEAN = 0,
@@ -72,4 +81,67 @@ struct EOS_Platform_Options_Prefix {
     const char* EncryptionKey;
     const char* OverrideCountryCode;
     const char* OverrideLocaleCode;
+};
+
+// --- EOS_SessionSearch_Find and result readback ---
+// https://dev.epicgames.com/docs/api-ref/functions/eos-session-search-find
+
+struct EOS_SessionSearch_FindOptions {
+    int32_t ApiVersion;
+    EOS_ProductUserId LocalUserId;
+};
+
+struct EOS_SessionSearch_FindCallbackInfo {
+    EOS_EResult ResultCode;
+    void* ClientData;
+};
+
+using EOS_SessionSearch_OnFindCallback = void(EOS_CALL*)(const EOS_SessionSearch_FindCallbackInfo*);
+
+struct EOS_SessionSearch_GetSearchResultCountOptions {
+    int32_t ApiVersion;
+};
+
+struct EOS_SessionSearch_CopySearchResultByIndexOptions {
+    int32_t ApiVersion;
+    uint32_t SessionIndex;
+};
+
+struct EOS_SessionDetails_CopyInfoOptions {
+    int32_t ApiVersion;
+};
+
+// Prefix-only mirror (see EOS_Platform_Options_Prefix comment above) - we
+// only read up through bAllowJoinInProgress/PermissionLevel.
+struct EOS_SessionDetails_Settings_Prefix {
+    int32_t ApiVersion;
+    const char* BucketId;
+    uint32_t NumPublicConnections;
+    EOS_Bool bAllowJoinInProgress;
+    EOS_EOnlineSessionPermissionLevel PermissionLevel;
+};
+
+struct EOS_SessionDetails_Info {
+    int32_t ApiVersion;
+    const char* SessionId;
+    const char* HostAddress;
+    uint32_t NumOpenPublicConnections;
+    const EOS_SessionDetails_Settings_Prefix* Settings;
+    EOS_ProductUserId OwnerUserId;
+    const char* OwnerServerClientId;
+};
+
+struct EOS_SessionDetails_GetSessionAttributeCountOptions {
+    int32_t ApiVersion;
+};
+
+struct EOS_SessionDetails_CopySessionAttributeByIndexOptions {
+    int32_t ApiVersion;
+    uint32_t AttrIndex;
+};
+
+struct EOS_SessionDetails_Attribute {
+    int32_t ApiVersion;
+    EOS_Sessions_AttributeData* Data;
+    EOS_ESessionAttributeAdvertisementType AdvertisementType;
 };

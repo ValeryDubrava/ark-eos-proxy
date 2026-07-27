@@ -40,7 +40,7 @@ stub/name list (`eossdk_proxy.def`, `src/eossdk_thunks.asm`,
 instead, exported via `__declspec(dllexport)` and resolving/calling the
 original itself.
 
-**Four functions are intercepted this way today** (`src/hooks.cpp`), all
+**Five functions are intercepted this way today** (`src/hooks.cpp`), all
 purely for logging — each calls straight through to the original with
 unmodified parameters, so behavior is unchanged, we're just watching:
 
@@ -52,15 +52,39 @@ unmodified parameters, so behavior is unchanged, we're just watching:
   the empty Russian-cluster list isn't an explicit search parameter.
 - `EOS_Platform_Create` — logs `ProductId`, `SandboxId`, `ClientId`,
   `bIsServer`, `OverrideCountryCode`, `OverrideLocaleCode` from the options
-  struct passed at startup (only the leading fields are read — EOS only
-  ever appends new fields to these structs, never reorders, so reading a
-  struct "prefix" is safe regardless of exactly which SDK version ARK
-  built against).
+  struct passed at startup. Result: both overrides are always null, and
+  `ProductId`/`SandboxId`/`ClientId` are fixed values shared by the whole
+  game (standard EOS deployment credentials, not account-specific) — ruled
+  out as a region-filtering lead too.
 - `EOS_Platform_SetOverrideCountryCode` / `EOS_Platform_SetOverrideLocaleCode`
-  — logs whatever value the game sets at runtime. Epic's own docs for the
-  country code variant say it's *"not currently used for anything
-  internally"*, so this is likely a dead end for the filtering question,
-  but it's cheap to confirm rather than assume.
+  — logs whatever value the game sets at runtime (in practice: never
+  called). Epic's own docs for the country code variant say it's *"not
+  currently used for anything internally"*.
+- `EOS_SessionSearch_Find` — this is the async call that actually executes
+  a search. The hook wraps its completion callback: after the real search
+  finishes, it walks every result via `GetSearchResultCount` →
+  `CopySearchResultByIndex` → `SessionDetails_CopyInfo` (session ID, host
+  address, bucket ID, permission level, etc.) and
+  `GetSessionAttributeCount`/`CopySessionAttributeByIndex` (every
+  key/value attribute on the session), logs all of it, releases the
+  handles, then calls the game's original callback with its original
+  `ClientData` restored — so from the game's point of view nothing
+  changed. The helper functions it calls
+  (`GetSearchResultCount`/`CopySearchResultByIndex`/`SessionDetails_CopyInfo`/
+  `GetSessionAttributeCount`/`CopySessionAttributeByIndex`/the three
+  `_Release` functions) aren't hooked — they're declared `extern "C"` and
+  called directly, which links straight to this DLL's own thunk exports
+  for them (see `src/eossdk_thunks.asm`), no separate `GetProcAddress`
+  needed.
+
+With no explicit region parameter anywhere client-side (search filters,
+platform options, or overrides), the working theory has shifted from "some
+session parameter defined elsewhere" to the backend filtering by the
+caller's IP. `EOS_SessionSearch_Find`'s logging is the groundwork for
+testing that: once we know the exact shape of a real search result, the
+next step is mocking/injecting a fabricated result for the Russian cluster
+session (which is already reachable by direct IP) so the game's own
+UI/join flow can use it instead of direct-connect.
 
 `src/eos_types.h` has the minimal struct/enum definitions these hooks need,
 hand-written from Epic's public API reference (dev.epicgames.com/docs) —
@@ -74,13 +98,21 @@ search), check `EOSProxy.log` next to the DLL. Lines look like:
 ```
 [2026-07-27 12:00:00] SetParameter key="SESSIONFILTER_..." op=EQUAL value(string)="..."
 [2026-07-27 12:00:00] Platform_Create ProductId="..." SandboxId="..." ClientId="..." bIsServer=false OverrideCountryCode="(null)" OverrideLocaleCode="(null)"
+[2026-07-27 12:00:00] Find called
+[2026-07-27 12:00:00] Find completed ResultCode=0
+[2026-07-27 12:00:00] Find resultCount=1
+[2026-07-27 12:00:00]   [0] SessionId="..." HostAddress="..." NumOpenPublicConnections=... BucketId="..." NumPublicConnections=... PermissionLevel=... bAllowJoinInProgress=... OwnerServerClientId="..."
+[2026-07-27 12:00:00]   attr key="..." value(string)="..."
 ```
 
 For `SetParameter`, the `key` names are what to look for — anything
 filtering by region, platform, or a bucket ID tied to a data-center
 location. For `Platform_Create`, `SandboxId`/`OverrideCountryCode`/
 `OverrideLocaleCode` are the fields most likely to carry region info, if
-any does.
+any does. For `Find`, `ResultCode=0` means `EOS_Success` — if the Russian
+cluster search comes back with `resultCount=0` and `ResultCode=0`, that's
+the backend legitimately returning an empty set (not an error), which is
+consistent with IP-based filtering.
 
 ## 1. Get the export list
 
@@ -93,8 +125,9 @@ dumpbin /exports EOSSDK-Win64-Shipping.dll > exports.txt
 ```
 
 `eossdk_proxy.def`, `src/eossdk_thunks.asm`, and the name table in
-`src/dllmain.cpp` are all generated together from this export list, so they
-stay in sync (677 entries, same order).
+`src/dllmain.cpp` are all generated together from this export list (minus
+whichever names are hand-hooked in `src/hooks.cpp` — currently 5 of 677),
+so they stay in sync with each other.
 
 ## 2. Build
 

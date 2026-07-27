@@ -1,7 +1,7 @@
 .data
 
 PUBLIC g_thunkTargets
-g_thunkTargets QWORD 673 DUP(0)
+g_thunkTargets QWORD 672 DUP(0)
 
 .code
 
@@ -2885,489 +2885,484 @@ EOS_SessionSearch_CopySearchResultByIndex PROC
     jmp qword ptr [g_thunkTargets + 4600]
 EOS_SessionSearch_CopySearchResultByIndex ENDP
 
-PUBLIC EOS_SessionSearch_Find
-EOS_SessionSearch_Find PROC
-    jmp qword ptr [g_thunkTargets + 4608]
-EOS_SessionSearch_Find ENDP
-
 PUBLIC EOS_SessionSearch_GetSearchResultCount
 EOS_SessionSearch_GetSearchResultCount PROC
-    jmp qword ptr [g_thunkTargets + 4616]
+    jmp qword ptr [g_thunkTargets + 4608]
 EOS_SessionSearch_GetSearchResultCount ENDP
 
 PUBLIC EOS_SessionSearch_Release
 EOS_SessionSearch_Release PROC
-    jmp qword ptr [g_thunkTargets + 4624]
+    jmp qword ptr [g_thunkTargets + 4616]
 EOS_SessionSearch_Release ENDP
 
 PUBLIC EOS_SessionSearch_RemoveParameter
 EOS_SessionSearch_RemoveParameter PROC
-    jmp qword ptr [g_thunkTargets + 4632]
+    jmp qword ptr [g_thunkTargets + 4624]
 EOS_SessionSearch_RemoveParameter ENDP
 
 PUBLIC EOS_SessionSearch_SetMaxResults
 EOS_SessionSearch_SetMaxResults PROC
-    jmp qword ptr [g_thunkTargets + 4640]
+    jmp qword ptr [g_thunkTargets + 4632]
 EOS_SessionSearch_SetMaxResults ENDP
 
 PUBLIC EOS_SessionSearch_SetSessionId
 EOS_SessionSearch_SetSessionId PROC
-    jmp qword ptr [g_thunkTargets + 4648]
+    jmp qword ptr [g_thunkTargets + 4640]
 EOS_SessionSearch_SetSessionId ENDP
 
 PUBLIC EOS_SessionSearch_SetTargetUserId
 EOS_SessionSearch_SetTargetUserId PROC
-    jmp qword ptr [g_thunkTargets + 4656]
+    jmp qword ptr [g_thunkTargets + 4648]
 EOS_SessionSearch_SetTargetUserId ENDP
 
 PUBLIC EOS_Sessions_AddNotifyJoinSessionAccepted
 EOS_Sessions_AddNotifyJoinSessionAccepted PROC
-    jmp qword ptr [g_thunkTargets + 4664]
+    jmp qword ptr [g_thunkTargets + 4656]
 EOS_Sessions_AddNotifyJoinSessionAccepted ENDP
 
 PUBLIC EOS_Sessions_AddNotifyLeaveSessionRequested
 EOS_Sessions_AddNotifyLeaveSessionRequested PROC
-    jmp qword ptr [g_thunkTargets + 4672]
+    jmp qword ptr [g_thunkTargets + 4664]
 EOS_Sessions_AddNotifyLeaveSessionRequested ENDP
 
 PUBLIC EOS_Sessions_AddNotifySendSessionNativeInviteRequested
 EOS_Sessions_AddNotifySendSessionNativeInviteRequested PROC
-    jmp qword ptr [g_thunkTargets + 4680]
+    jmp qword ptr [g_thunkTargets + 4672]
 EOS_Sessions_AddNotifySendSessionNativeInviteRequested ENDP
 
 PUBLIC EOS_Sessions_AddNotifySessionInviteAccepted
 EOS_Sessions_AddNotifySessionInviteAccepted PROC
-    jmp qword ptr [g_thunkTargets + 4688]
+    jmp qword ptr [g_thunkTargets + 4680]
 EOS_Sessions_AddNotifySessionInviteAccepted ENDP
 
 PUBLIC EOS_Sessions_AddNotifySessionInviteReceived
 EOS_Sessions_AddNotifySessionInviteReceived PROC
-    jmp qword ptr [g_thunkTargets + 4696]
+    jmp qword ptr [g_thunkTargets + 4688]
 EOS_Sessions_AddNotifySessionInviteReceived ENDP
 
 PUBLIC EOS_Sessions_AddNotifySessionInviteRejected
 EOS_Sessions_AddNotifySessionInviteRejected PROC
-    jmp qword ptr [g_thunkTargets + 4704]
+    jmp qword ptr [g_thunkTargets + 4696]
 EOS_Sessions_AddNotifySessionInviteRejected ENDP
 
 PUBLIC EOS_Sessions_CopyActiveSessionHandle
 EOS_Sessions_CopyActiveSessionHandle PROC
-    jmp qword ptr [g_thunkTargets + 4712]
+    jmp qword ptr [g_thunkTargets + 4704]
 EOS_Sessions_CopyActiveSessionHandle ENDP
 
 PUBLIC EOS_Sessions_CopySessionHandleByInviteId
 EOS_Sessions_CopySessionHandleByInviteId PROC
-    jmp qword ptr [g_thunkTargets + 4720]
+    jmp qword ptr [g_thunkTargets + 4712]
 EOS_Sessions_CopySessionHandleByInviteId ENDP
 
 PUBLIC EOS_Sessions_CopySessionHandleByUiEventId
 EOS_Sessions_CopySessionHandleByUiEventId PROC
-    jmp qword ptr [g_thunkTargets + 4728]
+    jmp qword ptr [g_thunkTargets + 4720]
 EOS_Sessions_CopySessionHandleByUiEventId ENDP
 
 PUBLIC EOS_Sessions_CopySessionHandleForPresence
 EOS_Sessions_CopySessionHandleForPresence PROC
-    jmp qword ptr [g_thunkTargets + 4736]
+    jmp qword ptr [g_thunkTargets + 4728]
 EOS_Sessions_CopySessionHandleForPresence ENDP
 
 PUBLIC EOS_Sessions_CreateSessionModification
 EOS_Sessions_CreateSessionModification PROC
-    jmp qword ptr [g_thunkTargets + 4744]
+    jmp qword ptr [g_thunkTargets + 4736]
 EOS_Sessions_CreateSessionModification ENDP
 
 PUBLIC EOS_Sessions_CreateSessionSearch
 EOS_Sessions_CreateSessionSearch PROC
-    jmp qword ptr [g_thunkTargets + 4752]
+    jmp qword ptr [g_thunkTargets + 4744]
 EOS_Sessions_CreateSessionSearch ENDP
 
 PUBLIC EOS_Sessions_DestroySession
 EOS_Sessions_DestroySession PROC
-    jmp qword ptr [g_thunkTargets + 4760]
+    jmp qword ptr [g_thunkTargets + 4752]
 EOS_Sessions_DestroySession ENDP
 
 PUBLIC EOS_Sessions_DumpSessionState
 EOS_Sessions_DumpSessionState PROC
-    jmp qword ptr [g_thunkTargets + 4768]
+    jmp qword ptr [g_thunkTargets + 4760]
 EOS_Sessions_DumpSessionState ENDP
 
 PUBLIC EOS_Sessions_EndSession
 EOS_Sessions_EndSession PROC
-    jmp qword ptr [g_thunkTargets + 4776]
+    jmp qword ptr [g_thunkTargets + 4768]
 EOS_Sessions_EndSession ENDP
 
 PUBLIC EOS_Sessions_GetInviteCount
 EOS_Sessions_GetInviteCount PROC
-    jmp qword ptr [g_thunkTargets + 4784]
+    jmp qword ptr [g_thunkTargets + 4776]
 EOS_Sessions_GetInviteCount ENDP
 
 PUBLIC EOS_Sessions_GetInviteIdByIndex
 EOS_Sessions_GetInviteIdByIndex PROC
-    jmp qword ptr [g_thunkTargets + 4792]
+    jmp qword ptr [g_thunkTargets + 4784]
 EOS_Sessions_GetInviteIdByIndex ENDP
 
 PUBLIC EOS_Sessions_IsUserInSession
 EOS_Sessions_IsUserInSession PROC
-    jmp qword ptr [g_thunkTargets + 4800]
+    jmp qword ptr [g_thunkTargets + 4792]
 EOS_Sessions_IsUserInSession ENDP
 
 PUBLIC EOS_Sessions_JoinSession
 EOS_Sessions_JoinSession PROC
-    jmp qword ptr [g_thunkTargets + 4808]
+    jmp qword ptr [g_thunkTargets + 4800]
 EOS_Sessions_JoinSession ENDP
 
 PUBLIC EOS_Sessions_QueryInvites
 EOS_Sessions_QueryInvites PROC
-    jmp qword ptr [g_thunkTargets + 4816]
+    jmp qword ptr [g_thunkTargets + 4808]
 EOS_Sessions_QueryInvites ENDP
 
 PUBLIC EOS_Sessions_RegisterPlayers
 EOS_Sessions_RegisterPlayers PROC
-    jmp qword ptr [g_thunkTargets + 4824]
+    jmp qword ptr [g_thunkTargets + 4816]
 EOS_Sessions_RegisterPlayers ENDP
 
 PUBLIC EOS_Sessions_RejectInvite
 EOS_Sessions_RejectInvite PROC
-    jmp qword ptr [g_thunkTargets + 4832]
+    jmp qword ptr [g_thunkTargets + 4824]
 EOS_Sessions_RejectInvite ENDP
 
 PUBLIC EOS_Sessions_RemoveNotifyJoinSessionAccepted
 EOS_Sessions_RemoveNotifyJoinSessionAccepted PROC
-    jmp qword ptr [g_thunkTargets + 4840]
+    jmp qword ptr [g_thunkTargets + 4832]
 EOS_Sessions_RemoveNotifyJoinSessionAccepted ENDP
 
 PUBLIC EOS_Sessions_RemoveNotifyLeaveSessionRequested
 EOS_Sessions_RemoveNotifyLeaveSessionRequested PROC
-    jmp qword ptr [g_thunkTargets + 4848]
+    jmp qword ptr [g_thunkTargets + 4840]
 EOS_Sessions_RemoveNotifyLeaveSessionRequested ENDP
 
 PUBLIC EOS_Sessions_RemoveNotifySendSessionNativeInviteRequested
 EOS_Sessions_RemoveNotifySendSessionNativeInviteRequested PROC
-    jmp qword ptr [g_thunkTargets + 4856]
+    jmp qword ptr [g_thunkTargets + 4848]
 EOS_Sessions_RemoveNotifySendSessionNativeInviteRequested ENDP
 
 PUBLIC EOS_Sessions_RemoveNotifySessionInviteAccepted
 EOS_Sessions_RemoveNotifySessionInviteAccepted PROC
-    jmp qword ptr [g_thunkTargets + 4864]
+    jmp qword ptr [g_thunkTargets + 4856]
 EOS_Sessions_RemoveNotifySessionInviteAccepted ENDP
 
 PUBLIC EOS_Sessions_RemoveNotifySessionInviteReceived
 EOS_Sessions_RemoveNotifySessionInviteReceived PROC
-    jmp qword ptr [g_thunkTargets + 4872]
+    jmp qword ptr [g_thunkTargets + 4864]
 EOS_Sessions_RemoveNotifySessionInviteReceived ENDP
 
 PUBLIC EOS_Sessions_RemoveNotifySessionInviteRejected
 EOS_Sessions_RemoveNotifySessionInviteRejected PROC
-    jmp qword ptr [g_thunkTargets + 4880]
+    jmp qword ptr [g_thunkTargets + 4872]
 EOS_Sessions_RemoveNotifySessionInviteRejected ENDP
 
 PUBLIC EOS_Sessions_SendInvite
 EOS_Sessions_SendInvite PROC
-    jmp qword ptr [g_thunkTargets + 4888]
+    jmp qword ptr [g_thunkTargets + 4880]
 EOS_Sessions_SendInvite ENDP
 
 PUBLIC EOS_Sessions_StartSession
 EOS_Sessions_StartSession PROC
-    jmp qword ptr [g_thunkTargets + 4896]
+    jmp qword ptr [g_thunkTargets + 4888]
 EOS_Sessions_StartSession ENDP
 
 PUBLIC EOS_Sessions_UnregisterPlayers
 EOS_Sessions_UnregisterPlayers PROC
-    jmp qword ptr [g_thunkTargets + 4904]
+    jmp qword ptr [g_thunkTargets + 4896]
 EOS_Sessions_UnregisterPlayers ENDP
 
 PUBLIC EOS_Sessions_UpdateSession
 EOS_Sessions_UpdateSession PROC
-    jmp qword ptr [g_thunkTargets + 4912]
+    jmp qword ptr [g_thunkTargets + 4904]
 EOS_Sessions_UpdateSession ENDP
 
 PUBLIC EOS_Sessions_UpdateSessionModification
 EOS_Sessions_UpdateSessionModification PROC
-    jmp qword ptr [g_thunkTargets + 4920]
+    jmp qword ptr [g_thunkTargets + 4912]
 EOS_Sessions_UpdateSessionModification ENDP
 
 PUBLIC EOS_Shutdown
 EOS_Shutdown PROC
-    jmp qword ptr [g_thunkTargets + 4928]
+    jmp qword ptr [g_thunkTargets + 4920]
 EOS_Shutdown ENDP
 
 PUBLIC EOS_Stats_CopyStatByIndex
 EOS_Stats_CopyStatByIndex PROC
-    jmp qword ptr [g_thunkTargets + 4936]
+    jmp qword ptr [g_thunkTargets + 4928]
 EOS_Stats_CopyStatByIndex ENDP
 
 PUBLIC EOS_Stats_CopyStatByName
 EOS_Stats_CopyStatByName PROC
-    jmp qword ptr [g_thunkTargets + 4944]
+    jmp qword ptr [g_thunkTargets + 4936]
 EOS_Stats_CopyStatByName ENDP
 
 PUBLIC EOS_Stats_GetStatsCount
 EOS_Stats_GetStatsCount PROC
-    jmp qword ptr [g_thunkTargets + 4952]
+    jmp qword ptr [g_thunkTargets + 4944]
 EOS_Stats_GetStatsCount ENDP
 
 PUBLIC EOS_Stats_IngestStat
 EOS_Stats_IngestStat PROC
-    jmp qword ptr [g_thunkTargets + 4960]
+    jmp qword ptr [g_thunkTargets + 4952]
 EOS_Stats_IngestStat ENDP
 
 PUBLIC EOS_Stats_QueryStats
 EOS_Stats_QueryStats PROC
-    jmp qword ptr [g_thunkTargets + 4968]
+    jmp qword ptr [g_thunkTargets + 4960]
 EOS_Stats_QueryStats ENDP
 
 PUBLIC EOS_Stats_Stat_Release
 EOS_Stats_Stat_Release PROC
-    jmp qword ptr [g_thunkTargets + 4976]
+    jmp qword ptr [g_thunkTargets + 4968]
 EOS_Stats_Stat_Release ENDP
 
 PUBLIC EOS_TitleStorageFileTransferRequest_CancelRequest
 EOS_TitleStorageFileTransferRequest_CancelRequest PROC
-    jmp qword ptr [g_thunkTargets + 4984]
+    jmp qword ptr [g_thunkTargets + 4976]
 EOS_TitleStorageFileTransferRequest_CancelRequest ENDP
 
 PUBLIC EOS_TitleStorageFileTransferRequest_GetFileRequestState
 EOS_TitleStorageFileTransferRequest_GetFileRequestState PROC
-    jmp qword ptr [g_thunkTargets + 4992]
+    jmp qword ptr [g_thunkTargets + 4984]
 EOS_TitleStorageFileTransferRequest_GetFileRequestState ENDP
 
 PUBLIC EOS_TitleStorageFileTransferRequest_GetFilename
 EOS_TitleStorageFileTransferRequest_GetFilename PROC
-    jmp qword ptr [g_thunkTargets + 5000]
+    jmp qword ptr [g_thunkTargets + 4992]
 EOS_TitleStorageFileTransferRequest_GetFilename ENDP
 
 PUBLIC EOS_TitleStorageFileTransferRequest_Release
 EOS_TitleStorageFileTransferRequest_Release PROC
-    jmp qword ptr [g_thunkTargets + 5008]
+    jmp qword ptr [g_thunkTargets + 5000]
 EOS_TitleStorageFileTransferRequest_Release ENDP
 
 PUBLIC EOS_TitleStorage_CopyFileMetadataAtIndex
 EOS_TitleStorage_CopyFileMetadataAtIndex PROC
-    jmp qword ptr [g_thunkTargets + 5016]
+    jmp qword ptr [g_thunkTargets + 5008]
 EOS_TitleStorage_CopyFileMetadataAtIndex ENDP
 
 PUBLIC EOS_TitleStorage_CopyFileMetadataByFilename
 EOS_TitleStorage_CopyFileMetadataByFilename PROC
-    jmp qword ptr [g_thunkTargets + 5024]
+    jmp qword ptr [g_thunkTargets + 5016]
 EOS_TitleStorage_CopyFileMetadataByFilename ENDP
 
 PUBLIC EOS_TitleStorage_DeleteCache
 EOS_TitleStorage_DeleteCache PROC
-    jmp qword ptr [g_thunkTargets + 5032]
+    jmp qword ptr [g_thunkTargets + 5024]
 EOS_TitleStorage_DeleteCache ENDP
 
 PUBLIC EOS_TitleStorage_FileMetadata_Release
 EOS_TitleStorage_FileMetadata_Release PROC
-    jmp qword ptr [g_thunkTargets + 5040]
+    jmp qword ptr [g_thunkTargets + 5032]
 EOS_TitleStorage_FileMetadata_Release ENDP
 
 PUBLIC EOS_TitleStorage_GetFileMetadataCount
 EOS_TitleStorage_GetFileMetadataCount PROC
-    jmp qword ptr [g_thunkTargets + 5048]
+    jmp qword ptr [g_thunkTargets + 5040]
 EOS_TitleStorage_GetFileMetadataCount ENDP
 
 PUBLIC EOS_TitleStorage_QueryFile
 EOS_TitleStorage_QueryFile PROC
-    jmp qword ptr [g_thunkTargets + 5056]
+    jmp qword ptr [g_thunkTargets + 5048]
 EOS_TitleStorage_QueryFile ENDP
 
 PUBLIC EOS_TitleStorage_QueryFileList
 EOS_TitleStorage_QueryFileList PROC
-    jmp qword ptr [g_thunkTargets + 5064]
+    jmp qword ptr [g_thunkTargets + 5056]
 EOS_TitleStorage_QueryFileList ENDP
 
 PUBLIC EOS_TitleStorage_ReadFile
 EOS_TitleStorage_ReadFile PROC
-    jmp qword ptr [g_thunkTargets + 5072]
+    jmp qword ptr [g_thunkTargets + 5064]
 EOS_TitleStorage_ReadFile ENDP
 
 PUBLIC EOS_UI_AcknowledgeEventId
 EOS_UI_AcknowledgeEventId PROC
-    jmp qword ptr [g_thunkTargets + 5080]
+    jmp qword ptr [g_thunkTargets + 5072]
 EOS_UI_AcknowledgeEventId ENDP
 
 PUBLIC EOS_UI_AddNotifyDisplaySettingsUpdated
 EOS_UI_AddNotifyDisplaySettingsUpdated PROC
-    jmp qword ptr [g_thunkTargets + 5088]
+    jmp qword ptr [g_thunkTargets + 5080]
 EOS_UI_AddNotifyDisplaySettingsUpdated ENDP
 
 PUBLIC EOS_UI_AddNotifyMemoryMonitor
 EOS_UI_AddNotifyMemoryMonitor PROC
-    jmp qword ptr [g_thunkTargets + 5096]
+    jmp qword ptr [g_thunkTargets + 5088]
 EOS_UI_AddNotifyMemoryMonitor ENDP
 
 PUBLIC EOS_UI_GetFriendsExclusiveInput
 EOS_UI_GetFriendsExclusiveInput PROC
-    jmp qword ptr [g_thunkTargets + 5104]
+    jmp qword ptr [g_thunkTargets + 5096]
 EOS_UI_GetFriendsExclusiveInput ENDP
 
 PUBLIC EOS_UI_GetFriendsVisible
 EOS_UI_GetFriendsVisible PROC
-    jmp qword ptr [g_thunkTargets + 5112]
+    jmp qword ptr [g_thunkTargets + 5104]
 EOS_UI_GetFriendsVisible ENDP
 
 PUBLIC EOS_UI_GetNotificationLocationPreference
 EOS_UI_GetNotificationLocationPreference PROC
-    jmp qword ptr [g_thunkTargets + 5120]
+    jmp qword ptr [g_thunkTargets + 5112]
 EOS_UI_GetNotificationLocationPreference ENDP
 
 PUBLIC EOS_UI_GetToggleFriendsButton
 EOS_UI_GetToggleFriendsButton PROC
-    jmp qword ptr [g_thunkTargets + 5128]
+    jmp qword ptr [g_thunkTargets + 5120]
 EOS_UI_GetToggleFriendsButton ENDP
 
 PUBLIC EOS_UI_GetToggleFriendsKey
 EOS_UI_GetToggleFriendsKey PROC
-    jmp qword ptr [g_thunkTargets + 5136]
+    jmp qword ptr [g_thunkTargets + 5128]
 EOS_UI_GetToggleFriendsKey ENDP
 
 PUBLIC EOS_UI_HideFriends
 EOS_UI_HideFriends PROC
-    jmp qword ptr [g_thunkTargets + 5144]
+    jmp qword ptr [g_thunkTargets + 5136]
 EOS_UI_HideFriends ENDP
 
 PUBLIC EOS_UI_IsSocialOverlayPaused
 EOS_UI_IsSocialOverlayPaused PROC
-    jmp qword ptr [g_thunkTargets + 5152]
+    jmp qword ptr [g_thunkTargets + 5144]
 EOS_UI_IsSocialOverlayPaused ENDP
 
 PUBLIC EOS_UI_IsValidButtonCombination
 EOS_UI_IsValidButtonCombination PROC
-    jmp qword ptr [g_thunkTargets + 5160]
+    jmp qword ptr [g_thunkTargets + 5152]
 EOS_UI_IsValidButtonCombination ENDP
 
 PUBLIC EOS_UI_IsValidKeyCombination
 EOS_UI_IsValidKeyCombination PROC
-    jmp qword ptr [g_thunkTargets + 5168]
+    jmp qword ptr [g_thunkTargets + 5160]
 EOS_UI_IsValidKeyCombination ENDP
 
 PUBLIC EOS_UI_PauseSocialOverlay
 EOS_UI_PauseSocialOverlay PROC
-    jmp qword ptr [g_thunkTargets + 5176]
+    jmp qword ptr [g_thunkTargets + 5168]
 EOS_UI_PauseSocialOverlay ENDP
 
 PUBLIC EOS_UI_PrePresent
 EOS_UI_PrePresent PROC
-    jmp qword ptr [g_thunkTargets + 5184]
+    jmp qword ptr [g_thunkTargets + 5176]
 EOS_UI_PrePresent ENDP
 
 PUBLIC EOS_UI_RemoveNotifyDisplaySettingsUpdated
 EOS_UI_RemoveNotifyDisplaySettingsUpdated PROC
-    jmp qword ptr [g_thunkTargets + 5192]
+    jmp qword ptr [g_thunkTargets + 5184]
 EOS_UI_RemoveNotifyDisplaySettingsUpdated ENDP
 
 PUBLIC EOS_UI_RemoveNotifyMemoryMonitor
 EOS_UI_RemoveNotifyMemoryMonitor PROC
-    jmp qword ptr [g_thunkTargets + 5200]
+    jmp qword ptr [g_thunkTargets + 5192]
 EOS_UI_RemoveNotifyMemoryMonitor ENDP
 
 PUBLIC EOS_UI_ReportInputState
 EOS_UI_ReportInputState PROC
-    jmp qword ptr [g_thunkTargets + 5208]
+    jmp qword ptr [g_thunkTargets + 5200]
 EOS_UI_ReportInputState ENDP
 
 PUBLIC EOS_UI_SetDisplayPreference
 EOS_UI_SetDisplayPreference PROC
-    jmp qword ptr [g_thunkTargets + 5216]
+    jmp qword ptr [g_thunkTargets + 5208]
 EOS_UI_SetDisplayPreference ENDP
 
 PUBLIC EOS_UI_SetToggleFriendsButton
 EOS_UI_SetToggleFriendsButton PROC
-    jmp qword ptr [g_thunkTargets + 5224]
+    jmp qword ptr [g_thunkTargets + 5216]
 EOS_UI_SetToggleFriendsButton ENDP
 
 PUBLIC EOS_UI_SetToggleFriendsKey
 EOS_UI_SetToggleFriendsKey PROC
-    jmp qword ptr [g_thunkTargets + 5232]
+    jmp qword ptr [g_thunkTargets + 5224]
 EOS_UI_SetToggleFriendsKey ENDP
 
 PUBLIC EOS_UI_ShowBlockPlayer
 EOS_UI_ShowBlockPlayer PROC
-    jmp qword ptr [g_thunkTargets + 5240]
+    jmp qword ptr [g_thunkTargets + 5232]
 EOS_UI_ShowBlockPlayer ENDP
 
 PUBLIC EOS_UI_ShowFriends
 EOS_UI_ShowFriends PROC
-    jmp qword ptr [g_thunkTargets + 5248]
+    jmp qword ptr [g_thunkTargets + 5240]
 EOS_UI_ShowFriends ENDP
 
 PUBLIC EOS_UI_ShowNativeProfile
 EOS_UI_ShowNativeProfile PROC
-    jmp qword ptr [g_thunkTargets + 5256]
+    jmp qword ptr [g_thunkTargets + 5248]
 EOS_UI_ShowNativeProfile ENDP
 
 PUBLIC EOS_UI_ShowReportPlayer
 EOS_UI_ShowReportPlayer PROC
-    jmp qword ptr [g_thunkTargets + 5264]
+    jmp qword ptr [g_thunkTargets + 5256]
 EOS_UI_ShowReportPlayer ENDP
 
 PUBLIC EOS_UserInfo_BestDisplayName_Release
 EOS_UserInfo_BestDisplayName_Release PROC
-    jmp qword ptr [g_thunkTargets + 5272]
+    jmp qword ptr [g_thunkTargets + 5264]
 EOS_UserInfo_BestDisplayName_Release ENDP
 
 PUBLIC EOS_UserInfo_CopyBestDisplayName
 EOS_UserInfo_CopyBestDisplayName PROC
-    jmp qword ptr [g_thunkTargets + 5280]
+    jmp qword ptr [g_thunkTargets + 5272]
 EOS_UserInfo_CopyBestDisplayName ENDP
 
 PUBLIC EOS_UserInfo_CopyBestDisplayNameWithPlatform
 EOS_UserInfo_CopyBestDisplayNameWithPlatform PROC
-    jmp qword ptr [g_thunkTargets + 5288]
+    jmp qword ptr [g_thunkTargets + 5280]
 EOS_UserInfo_CopyBestDisplayNameWithPlatform ENDP
 
 PUBLIC EOS_UserInfo_CopyExternalUserInfoByAccountId
 EOS_UserInfo_CopyExternalUserInfoByAccountId PROC
-    jmp qword ptr [g_thunkTargets + 5296]
+    jmp qword ptr [g_thunkTargets + 5288]
 EOS_UserInfo_CopyExternalUserInfoByAccountId ENDP
 
 PUBLIC EOS_UserInfo_CopyExternalUserInfoByAccountType
 EOS_UserInfo_CopyExternalUserInfoByAccountType PROC
-    jmp qword ptr [g_thunkTargets + 5304]
+    jmp qword ptr [g_thunkTargets + 5296]
 EOS_UserInfo_CopyExternalUserInfoByAccountType ENDP
 
 PUBLIC EOS_UserInfo_CopyExternalUserInfoByIndex
 EOS_UserInfo_CopyExternalUserInfoByIndex PROC
-    jmp qword ptr [g_thunkTargets + 5312]
+    jmp qword ptr [g_thunkTargets + 5304]
 EOS_UserInfo_CopyExternalUserInfoByIndex ENDP
 
 PUBLIC EOS_UserInfo_CopyUserInfo
 EOS_UserInfo_CopyUserInfo PROC
-    jmp qword ptr [g_thunkTargets + 5320]
+    jmp qword ptr [g_thunkTargets + 5312]
 EOS_UserInfo_CopyUserInfo ENDP
 
 PUBLIC EOS_UserInfo_ExternalUserInfo_Release
 EOS_UserInfo_ExternalUserInfo_Release PROC
-    jmp qword ptr [g_thunkTargets + 5328]
+    jmp qword ptr [g_thunkTargets + 5320]
 EOS_UserInfo_ExternalUserInfo_Release ENDP
 
 PUBLIC EOS_UserInfo_GetExternalUserInfoCount
 EOS_UserInfo_GetExternalUserInfoCount PROC
-    jmp qword ptr [g_thunkTargets + 5336]
+    jmp qword ptr [g_thunkTargets + 5328]
 EOS_UserInfo_GetExternalUserInfoCount ENDP
 
 PUBLIC EOS_UserInfo_GetLocalPlatformType
 EOS_UserInfo_GetLocalPlatformType PROC
-    jmp qword ptr [g_thunkTargets + 5344]
+    jmp qword ptr [g_thunkTargets + 5336]
 EOS_UserInfo_GetLocalPlatformType ENDP
 
 PUBLIC EOS_UserInfo_QueryUserInfo
 EOS_UserInfo_QueryUserInfo PROC
-    jmp qword ptr [g_thunkTargets + 5352]
+    jmp qword ptr [g_thunkTargets + 5344]
 EOS_UserInfo_QueryUserInfo ENDP
 
 PUBLIC EOS_UserInfo_QueryUserInfoByDisplayName
 EOS_UserInfo_QueryUserInfoByDisplayName PROC
-    jmp qword ptr [g_thunkTargets + 5360]
+    jmp qword ptr [g_thunkTargets + 5352]
 EOS_UserInfo_QueryUserInfoByDisplayName ENDP
 
 PUBLIC EOS_UserInfo_QueryUserInfoByExternalAccount
 EOS_UserInfo_QueryUserInfoByExternalAccount PROC
-    jmp qword ptr [g_thunkTargets + 5368]
+    jmp qword ptr [g_thunkTargets + 5360]
 EOS_UserInfo_QueryUserInfoByExternalAccount ENDP
 
 PUBLIC EOS_UserInfo_Release
 EOS_UserInfo_Release PROC
-    jmp qword ptr [g_thunkTargets + 5376]
+    jmp qword ptr [g_thunkTargets + 5368]
 EOS_UserInfo_Release ENDP
 
 END

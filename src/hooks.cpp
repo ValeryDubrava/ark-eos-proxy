@@ -10,6 +10,30 @@
 extern "C" HMODULE g_originalModule;
 extern "C" HMODULE g_thisModule;
 
+// Read-only helpers called directly below (GetSearchResultCount,
+// CopySearchResultByIndex, SessionDetails_CopyInfo/GetSessionAttributeCount/
+// CopySessionAttributeByIndex, and the three _Release functions) are not
+// hooked - they're still present as ordinary thunk exports in this same
+// binary (see src/eossdk_thunks.asm), so declaring their signatures here and
+// calling them directly links straight to those thunks. No separate
+// GetProcAddress needed for them.
+extern "C" uint32_t EOS_CALL EOS_SessionSearch_GetSearchResultCount(
+    EOS_HSessionSearch Handle, const EOS_SessionSearch_GetSearchResultCountOptions* Options);
+extern "C" EOS_EResult EOS_CALL EOS_SessionSearch_CopySearchResultByIndex(
+    EOS_HSessionSearch Handle, const EOS_SessionSearch_CopySearchResultByIndexOptions* Options,
+    EOS_HSessionDetails* OutSessionHandle);
+extern "C" EOS_EResult EOS_CALL EOS_SessionDetails_CopyInfo(
+    EOS_HSessionDetails Handle, const EOS_SessionDetails_CopyInfoOptions* Options,
+    EOS_SessionDetails_Info** OutSessionInfo);
+extern "C" void EOS_CALL EOS_SessionDetails_Info_Release(EOS_SessionDetails_Info* SessionInfo);
+extern "C" uint32_t EOS_CALL EOS_SessionDetails_GetSessionAttributeCount(
+    EOS_HSessionDetails Handle, const EOS_SessionDetails_GetSessionAttributeCountOptions* Options);
+extern "C" EOS_EResult EOS_CALL EOS_SessionDetails_CopySessionAttributeByIndex(
+    EOS_HSessionDetails Handle, const EOS_SessionDetails_CopySessionAttributeByIndexOptions* Options,
+    EOS_SessionDetails_Attribute** OutSessionAttribute);
+extern "C" void EOS_CALL EOS_SessionDetails_Attribute_Release(EOS_SessionDetails_Attribute* SessionAttribute);
+extern "C" void EOS_CALL EOS_SessionDetails_Release(EOS_HSessionDetails SessionHandle);
+
 namespace {
 
 void LogLine(const char* fmt, ...) {
@@ -89,6 +113,107 @@ SetOverrideCodeFn ResolveSetOverrideLocaleCode() {
     static SetOverrideCodeFn original = reinterpret_cast<SetOverrideCodeFn>(
         GetProcAddress(g_originalModule, "EOS_Platform_SetOverrideLocaleCode"));
     return original;
+}
+
+using FindFn = void(EOS_CALL*)(EOS_HSessionSearch, const EOS_SessionSearch_FindOptions*, void*,
+                                EOS_SessionSearch_OnFindCallback);
+
+FindFn ResolveFind() {
+    static FindFn original =
+        reinterpret_cast<FindFn>(GetProcAddress(g_originalModule, "EOS_SessionSearch_Find"));
+    return original;
+}
+
+struct FindContext {
+    void* originalClientData;
+    EOS_SessionSearch_OnFindCallback originalCallback;
+    EOS_HSessionSearch handle;
+};
+
+void LogAttribute(const char* prefix, const EOS_Sessions_AttributeData& param) {
+    switch (param.ValueType) {
+        case EOS_AT_BOOLEAN:
+            LogLine("%s key=\"%s\" value(bool)=%s", prefix, param.Key,
+                    param.Value.AsBool ? "true" : "false");
+            break;
+        case EOS_AT_INT64:
+            LogLine("%s key=\"%s\" value(int64)=%lld", prefix, param.Key,
+                     static_cast<long long>(param.Value.AsInt64));
+            break;
+        case EOS_AT_DOUBLE:
+            LogLine("%s key=\"%s\" value(double)=%f", prefix, param.Key, param.Value.AsDouble);
+            break;
+        case EOS_AT_STRING:
+            LogLine("%s key=\"%s\" value(string)=\"%s\"", prefix, param.Key,
+                     SafeStr(param.Value.AsUtf8));
+            break;
+        default:
+            LogLine("%s key=\"%s\" value type=%d (unknown)", prefix, param.Key,
+                     static_cast<int>(param.ValueType));
+            break;
+    }
+}
+
+void EOS_CALL OnFindComplete(const EOS_SessionSearch_FindCallbackInfo* Data) {
+    auto* ctx = static_cast<FindContext*>(Data->ClientData);
+
+    LogLine("Find completed ResultCode=%d", Data->ResultCode);
+
+    if (Data->ResultCode == EOS_Success) {
+        EOS_SessionSearch_GetSearchResultCountOptions countOpts{1};
+        uint32_t count = EOS_SessionSearch_GetSearchResultCount(ctx->handle, &countOpts);
+        LogLine("Find resultCount=%u", count);
+
+        for (uint32_t i = 0; i < count; ++i) {
+            EOS_SessionSearch_CopySearchResultByIndexOptions copyOpts{1, i};
+            EOS_HSessionDetails details = nullptr;
+            if (EOS_SessionSearch_CopySearchResultByIndex(ctx->handle, &copyOpts, &details) != EOS_Success ||
+                !details) {
+                continue;
+            }
+
+            EOS_SessionDetails_CopyInfoOptions infoOpts{1};
+            EOS_SessionDetails_Info* info = nullptr;
+            if (EOS_SessionDetails_CopyInfo(details, &infoOpts, &info) == EOS_Success && info) {
+                LogLine(
+                    "  [%u] SessionId=\"%s\" HostAddress=\"%s\" NumOpenPublicConnections=%u "
+                    "BucketId=\"%s\" NumPublicConnections=%u PermissionLevel=%d "
+                    "bAllowJoinInProgress=%s OwnerServerClientId=\"%s\"",
+                    i, SafeStr(info->SessionId), SafeStr(info->HostAddress),
+                    info->NumOpenPublicConnections,
+                    info->Settings ? SafeStr(info->Settings->BucketId) : "(null)",
+                    info->Settings ? info->Settings->NumPublicConnections : 0u,
+                    info->Settings ? info->Settings->PermissionLevel : -1,
+                    (info->Settings && info->Settings->bAllowJoinInProgress) ? "true" : "false",
+                    SafeStr(info->OwnerServerClientId));
+                EOS_SessionDetails_Info_Release(info);
+            }
+
+            EOS_SessionDetails_GetSessionAttributeCountOptions attrCountOpts{1};
+            uint32_t attrCount = EOS_SessionDetails_GetSessionAttributeCount(details, &attrCountOpts);
+            for (uint32_t a = 0; a < attrCount; ++a) {
+                EOS_SessionDetails_CopySessionAttributeByIndexOptions attrOpts{1, a};
+                EOS_SessionDetails_Attribute* attr = nullptr;
+                if (EOS_SessionDetails_CopySessionAttributeByIndex(details, &attrOpts, &attr) ==
+                        EOS_Success &&
+                    attr && attr->Data) {
+                    LogAttribute("  attr", *attr->Data);
+                    EOS_SessionDetails_Attribute_Release(attr);
+                }
+            }
+
+            EOS_SessionDetails_Release(details);
+        }
+    }
+
+    EOS_SessionSearch_FindCallbackInfo forwarded = *Data;
+    forwarded.ClientData = ctx->originalClientData;
+    EOS_SessionSearch_OnFindCallback originalCallback = ctx->originalCallback;
+    delete ctx;
+
+    if (originalCallback) {
+        originalCallback(&forwarded);
+    }
 }
 
 }  // namespace
@@ -184,4 +309,26 @@ extern "C" __declspec(dllexport) EOS_EResult EOS_CALL EOS_Platform_SetOverrideLo
     }
 
     return original(Handle, NewLocaleCode);
+}
+
+// Logs the full shape of a search result (session info + settings + every
+// attribute) before forwarding the callback unchanged. Purely observational
+// for now - this is what a later mock/replace step would need to fabricate.
+extern "C" __declspec(dllexport) void EOS_CALL EOS_SessionSearch_Find(
+    EOS_HSessionSearch Handle, const EOS_SessionSearch_FindOptions* Options, void* ClientData,
+    EOS_SessionSearch_OnFindCallback CompletionDelegate) {
+    LogLine("Find called");
+
+    FindFn original = ResolveFind();
+    if (!original) {
+        LogLine("Find: failed to resolve original function");
+        if (CompletionDelegate) {
+            EOS_SessionSearch_FindCallbackInfo errorInfo{-1, ClientData};
+            CompletionDelegate(&errorInfo);
+        }
+        return;
+    }
+
+    auto* ctx = new FindContext{ClientData, CompletionDelegate, Handle};
+    original(Handle, Options, ctx, OnFindComplete);
 }

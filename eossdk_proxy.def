@@ -576,7 +576,6 @@ EXPORTS
     EOS_SessionModification_SetMaxPlayers
     EOS_SessionModification_SetPermissionLevel
     EOS_SessionSearch_CopySearchResultByIndex
-    EOS_SessionSearch_Find
     EOS_SessionSearch_GetSearchResultCount
     EOS_SessionSearch_Release
     EOS_SessionSearch_RemoveParameter
